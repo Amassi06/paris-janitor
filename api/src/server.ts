@@ -18,9 +18,18 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 const startServer = async () => {
-  await connectDB();
+ try {
+    console.log('Tentative de connexion à MongoDB...');
+    await connectDB();
+    console.log('Connexion réussie, lancement du serveur...');
 
-  app.listen(PORT, () => {
-    console.log(`Serveur démarré sur http://localhost:${PORT}`);
-  });
+    app.listen(PORT, () => {
+      console.log(`Serveur démarré sur http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Erreur au lancement du serveur :', error);
+    process.exit(1);
+  }
 };
+
+startServer();
