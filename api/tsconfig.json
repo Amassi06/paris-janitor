@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    /* Layout */
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    /* Environnement & Résolution */
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+
+    /* Rigueur & Typage */
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "include": ["src/**/*"]
+}
