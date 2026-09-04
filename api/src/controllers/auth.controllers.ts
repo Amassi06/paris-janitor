@@ -5,7 +5,7 @@ import { User, UserRole, SubscriptionType } from '../models/User.js';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, role, subscription } = req.body;
+    const { email, password, subscription } = req.body;
 
     if (!email || !password) {
       res.status(400).json({ message: 'Email et mot de passe requis' });
@@ -25,7 +25,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const newUser = await User.create({
       email,
       password: hashedPassword,
-      role: role || UserRole.VOYAGEUR,
       subscription: subscription || SubscriptionType.FREE,
     });
 
