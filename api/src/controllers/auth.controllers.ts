@@ -24,6 +24,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     const newUser = await User.create({
       email,
+      role:UserRole.VOYAGEUR,
       password: hashedPassword,
       subscription: subscription || SubscriptionType.FREE,
     });
