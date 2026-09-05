@@ -72,7 +72,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Génération du JWT (valable 7 jours)
+    // Génération du JWT (valable 1 jours)
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       jwtSecret,
