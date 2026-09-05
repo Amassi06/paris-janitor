@@ -2,9 +2,13 @@ import {Request, Response} from 'express';
 import Stripe from 'stripe';
 import { Booking, BookingStatus} from '../models/Booking.js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2026-08-26.dahlia', 
-});
+const getStripe = (): Stripe => {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY absente du fichier .env');
+  }
+  return new Stripe(key);
+};
 
 export const createCheckoutSession = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -15,7 +19,7 @@ export const createCheckoutSession = async (req: Request, res: Response): Promis
       res.status(400).json({ message: 'Réservation invalide ou déjà payée' });
       return;
     }
-
+    const stripe = getStripe();
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -25,7 +29,7 @@ export const createCheckoutSession = async (req: Request, res: Response): Promis
             product_data: {
               name: 'Prestation Paris Janitor',
             },
-            unit_amount: Math.round(booking.prix_final * 100), // Stripe exige des centimes
+            unit_amount: Math.round(booking.prix_final * 100), 
           },
           quantity: 1,
         },
@@ -42,4 +46,42 @@ export const createCheckoutSession = async (req: Request, res: Response): Promis
   } catch (error) {
     res.status(500).json({ message: 'Erreur lors de la création de la session Stripe', error });
   }
+};
+
+export const handleStripeWebhook = async (req: Request, res: Response): Promise<void> => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!sig || !endpointSecret) {
+    res.status(400).send('Webhook secret ou signature manquante.');
+    return;
+  }
+
+  let event;
+
+  try {
+    const stripe = getStripe();
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err: any) {
+    console.error(' Erreur de signature Webhook :', err.message);
+    res.status(400).send(`Webhook Error: ${err.message}`);
+    return;
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const bookingId = session.metadata?.bookingId;
+
+    if (bookingId) {
+      try {
+        await Booking.findByIdAndUpdate(bookingId, { statut: BookingStatus.CONFIRMED });
+        console.log(`Réservation ${bookingId} confirmée suite au paiement.`);
+    
+        
+      } catch (error) {
+        console.error('Erreur lors de la mise à jour de la réservation :', error);
+      }
+    }
+  }
+  res.status(200).json({ received: true });
 };
