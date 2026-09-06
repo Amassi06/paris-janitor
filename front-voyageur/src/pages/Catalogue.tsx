@@ -8,6 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 export default function Catalogue() {
   const [services, setServices] = useState<IService[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dates, setDates] = useState<{ [key: string]: string }>({});
   const [bookingId, setBookingId] = useState<string | null>(null);
 
   const navigate = useNavigate();
@@ -42,10 +43,20 @@ export default function Catalogue() {
     fetchServices();
   }, [navigate]);
 
+  const handleDateChange = (serviceId: string, value: string) => {
+    setDates(prev => ({ ...prev, [serviceId]: value }));
+  };
+
   const handleBook = async (serviceId: string) => {
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
+      return;
+    }
+
+    const selectedDate = dates[serviceId];
+    if (!selectedDate) {
+      alert("Veuillez sélectionner une date et une heure pour cette prestation.");
       return;
     }
 
@@ -59,6 +70,7 @@ export default function Catalogue() {
         },
         body: JSON.stringify({
           id_service: serviceId,
+          date_prestation: new Date(selectedDate).toISOString(),
         })
       });
 
@@ -99,6 +111,15 @@ export default function Catalogue() {
               <div>
                 <h2 className="text-xl font-semibold text-gray-800">{service.nom}</h2>
                 <p className="text-gray-600 mt-2 text-sm">{service.description}</p>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date d'intervention</label>
+                  <input
+                    type="datetime-local"
+                    className="w-full border border-gray-300 rounded p-2 text-sm"
+                    value={dates[service._id] || ''}
+                    onChange={(e) => handleDateChange(service._id, e.target.value)}
+                  />
+                </div>
               </div>
               <div className="mt-6 flex items-center justify-between border-t pt-4">
                 <span className="text-lg font-bold text-gray-900">À partir de {service.prix_base} €</span>
