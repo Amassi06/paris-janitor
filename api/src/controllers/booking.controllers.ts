@@ -54,7 +54,7 @@ export const addReview = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
-    if (booking.statut !== BookingStatus.COMPLETED) {
+    if (booking.statut !== BookingStatus.CONFIRMED) {
       res.status(400).json({ message: 'La prestation doit être terminée pour être évaluée' });
       return;
     }

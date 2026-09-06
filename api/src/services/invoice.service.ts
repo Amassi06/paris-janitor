@@ -11,7 +11,8 @@ export const generateInvoicePDF = async (booking: IBooking): Promise<string> => 
     fs.mkdirSync(invoicesDir, { recursive: true });
   }
 
-  const numeroFacture = `INV-${Date.now()}`;
+
+  const numeroFacture = `INV-${booking._id}`;
   const fileName = `${numeroFacture}.pdf`;
 
   const service = await Service.findById(booking.id_service);

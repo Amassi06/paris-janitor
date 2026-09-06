@@ -1,7 +1,7 @@
 import {Request, Response} from 'express';
 import Stripe from 'stripe';
 import { Booking, BookingStatus} from '../models/Booking.js';
-import { User, SubscriptionType } from '../models/User.js';
+import { User, SubscriptionType,IUser } from '../models/User.js';
 import { generateInvoicePDF } from '../services/invoice.service.js';
 
 const PLANS: Record<string, { name: string; amount: number; subscriptionType: SubscriptionType }> = {
@@ -35,6 +35,8 @@ export const createCheckoutSession = async (req: Request, res: Response): Promis
       return;
     }
     const stripe = getStripe();
+    const user_ = await Booking.findById(bookingId).populate<{ id_voyageur: IUser }>('id_voyageur');
+    const userEmail = user_?.id_voyageur?.email;
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -50,6 +52,7 @@ export const createCheckoutSession = async (req: Request, res: Response): Promis
         },
       ],
       mode: 'payment',
+      customer_email: userEmail,
       success_url: `http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `http://localhost:5173/cancel`,
       metadata: {
@@ -68,7 +71,7 @@ export const createCheckoutSession = async (req: Request, res: Response): Promis
 export const createSubscriptionCheckout = async (req: Request, res: Response): Promise<void> => {
   try {
     const { plan } = req.body;
-    const userId = (req as any).user?._id || (req as any).user?.id;
+    const userId = req.user?._id;
 
     if (!userId) {
       res.status(401).json({ message: 'Utilisateur non authentifié.' });
@@ -82,8 +85,11 @@ export const createSubscriptionCheckout = async (req: Request, res: Response): P
     }
 
     const stripe = getStripe();
+    const user_ = await User.findById(userId);
+    const userEmail = user_?.email;
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
+      customer_email: userEmail,
       payment_method_types: ['card'],
       line_items: [
         {

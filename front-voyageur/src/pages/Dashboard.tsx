@@ -82,6 +82,40 @@ export default function Dashboard() {
     alert(err instanceof Error ? err.message : 'Impossible de contacter le serveur de paiement.');
   }
 };
+const handleReview = async (bookingId: string) => {
+    const noteStr = window.prompt("Notez la prestation (de 1 à 5) :");
+    if (!noteStr) return; 
+
+    const note = parseInt(noteStr, 10);
+    if (isNaN(note) || note < 1 || note > 5) {
+      alert("La note doit être un chiffre entre 1 et 5.");
+      return;
+    }
+
+    const commentaire = window.prompt("Laissez un commentaire (optionnel) :") || "";
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:3000/api/bookings/${bookingId}/review`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ note, commentaire })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Erreur lors de l'envoi de l'avis.");
+      }
+      alert("Merci pour votre avis !");  
+      window.location.reload();
+    } catch (err) {
+      console.error('Erreur handleReview :', err);
+      alert(err instanceof Error ? err.message : 'Erreur réseau.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -115,7 +149,7 @@ export default function Dashboard() {
                     className={`px-2 py-1 rounded text-xs font-medium ${
                       booking.statut === BookingStatus.PENDING
                         ? 'bg-orange-100 text-orange-700'
-                        : booking.statut === BookingStatus.CONFIRMED || booking.statut === BookingStatus.COMPLETED
+                        : booking.statut === BookingStatus.CONFIRMED 
                         ? 'bg-green-100 text-green-700'
                         : 'bg-red-100 text-red-700'
                     }`}
@@ -127,7 +161,6 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Actions selon le statut */}
               <div className="flex space-x-3">
                 {booking.statut === BookingStatus.PENDING && (
                   <button
@@ -139,15 +172,29 @@ export default function Dashboard() {
                   </button>
                 )}
                 
-                {(booking.statut === BookingStatus.CONFIRMED || booking.statut === BookingStatus.COMPLETED) && (
+                {(booking.statut === BookingStatus.CONFIRMED ) && (
                   <a
-                    href={`http://localhost:3000/invoices/facture_${booking._id}.pdf`}
+                    href={`http://localhost:3000/invoices/INV-${booking._id}.pdf`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition text-center"
+                    className="rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition text-center flex items-center"
                   >
                     Voir la facture
                   </a>
+                )}
+
+                {booking.statut === BookingStatus.CONFIRMED && !booking.note && (
+                  <button
+                    onClick={() => handleReview(booking._id)}
+                    className="rounded bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600 transition"
+                  >
+                    Évaluer
+                  </button>
+                )}
+                {booking.note && (
+                  <span className="flex items-center text-sm font-bold text-yellow-500">
+                    ★ {booking.note}/5
+                  </span>
                 )}
               </div>
             </div>

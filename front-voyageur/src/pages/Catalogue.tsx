@@ -2,9 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { IService } from '../types/booking';
 
-// À adapter selon ton bundler (Vite: import.meta.env.VITE_API_URL, CRA: process.env.REACT_APP_API_URL)
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+const getCurrentDateTimeLocal = () => {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  return now.toISOString().slice(0, 16);
+};
 export default function Catalogue() {
   const [services, setServices] = useState<IService[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,6 +119,7 @@ export default function Catalogue() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Date d'intervention</label>
                   <input
                     type="datetime-local"
+                    min={getCurrentDateTimeLocal()}
                     className="w-full border border-gray-300 rounded p-2 text-sm"
                     value={dates[service._id] || ''}
                     onChange={(e) => handleDateChange(service._id, e.target.value)}

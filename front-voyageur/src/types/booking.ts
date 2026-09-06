@@ -1,9 +1,8 @@
-export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 
 export const BookingStatus = {
   PENDING: 'PENDING',
   CONFIRMED: 'CONFIRMED',
-  COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
 };
 
