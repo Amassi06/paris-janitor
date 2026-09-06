@@ -1,6 +1,7 @@
 import {Request, Response} from 'express';
 import Stripe from 'stripe';
 import { Booking, BookingStatus} from '../models/Booking.js';
+import { generateInvoicePDF } from '../services/invoice.service.js';
 
 const getStripe = (): Stripe => {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -74,9 +75,15 @@ export const handleStripeWebhook = async (req: Request, res: Response): Promise<
 
     if (bookingId) {
       try {
-        await Booking.findByIdAndUpdate(bookingId, { statut: BookingStatus.CONFIRMED });
+        const booking = await Booking.findByIdAndUpdate(bookingId, { statut: BookingStatus.CONFIRMED });
         console.log(`Réservation ${bookingId} confirmée suite au paiement.`);
-    
+        if (!booking) {
+          console.error(`Réservation introuvable pour l'id : ${bookingId}`);
+          return;
+        }
+        const pdfUrl = await generateInvoicePDF(booking);
+        console.log(`Facture générée : ${pdfUrl}`);
+      
         
       } catch (error) {
         console.error('Erreur lors de la mise à jour de la réservation :', error);

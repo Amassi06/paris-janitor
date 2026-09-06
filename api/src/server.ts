@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 
-dotenv.config();
 
 import { connectDB } from './config/db.js';
 import {handleStripeWebhook} from './controllers/payment.controllers.js'
@@ -17,9 +16,11 @@ import swaggerUi from 'swagger-ui-express';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+dotenv.config();
 
 // Middlewares
 app.use(cors());
+app.use('/invoices', express.static(path.resolve('public/invoices')));
 app.post('/api/webhooks/stripe',express.raw({type:'application/json'}),handleStripeWebhook);
 app.use(express.json());
 
