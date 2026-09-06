@@ -127,15 +127,29 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {booking.statut === BookingStatus.PENDING && (
-                <button
-                  type="button"
-                  onClick={() => handlePay(booking._id)}
-                  className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
-                >
-                  Payer
-                </button>
-              )}
+              {/* Actions selon le statut */}
+              <div className="flex space-x-3">
+                {booking.statut === BookingStatus.PENDING && (
+                  <button
+                    type="button"
+                    onClick={() => handlePay(booking._id)}
+                    className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+                  >
+                    Payer
+                  </button>
+                )}
+                
+                {(booking.statut === BookingStatus.CONFIRMED || booking.statut === BookingStatus.COMPLETED) && (
+                  <a
+                    href={`http://localhost:3000/invoices/facture_${booking._id}.pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition text-center"
+                  >
+                    Voir la facture
+                  </a>
+                )}
+              </div>
             </div>
           ))}
         </div>
