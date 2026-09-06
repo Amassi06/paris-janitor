@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { IBooking } from '../models/Booking.js';
 import { Invoice } from '../models/Invoice.js';
+import { Service } from '../models/Service.js';
 
 export const generateInvoicePDF = async (booking: IBooking): Promise<string> => {
   const invoicesDir = path.resolve('public/invoices');
@@ -12,6 +13,10 @@ export const generateInvoicePDF = async (booking: IBooking): Promise<string> => 
 
   const numeroFacture = `INV-${Date.now()}`;
   const fileName = `${numeroFacture}.pdf`;
+  
+  const service = await Service.findById(booking.id_service);
+  const serviceName = service?.nom;
+  const serviceDescription = service?.description
   const filePath = path.join(invoicesDir, fileName);
 
   return new Promise((resolve, reject) => {
@@ -48,7 +53,7 @@ doc.font('Helvetica-Bold').fillColor('#111111')
 doc.strokeColor('#e5e7eb').lineWidth(1).moveTo(50, 205).lineTo(550, 205).stroke();
 
 doc.font('Helvetica').fillColor('#333333')
-   .text('Prestation de conciergerie', 50, 215)
+   .text(`${serviceName} : ${serviceDescription}`, 50, 215)
    .text(`${booking.prix_final.toFixed(2)} €`, 480, 215, { align: 'right' });
 
 doc.strokeColor('#111111').lineWidth(1).moveTo(350, 240).lineTo(550, 240).stroke();
