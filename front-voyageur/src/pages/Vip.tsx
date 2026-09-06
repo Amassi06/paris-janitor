@@ -16,7 +16,7 @@ export default function Vip() {
 
     setLoadingPlan(plan);
     try {
-      const res = await fetch(`${API_URL}/api/subscriptions/checkout`, {
+      const res = await fetch(`${API_URL}/api/payments/subscription/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
