@@ -3,6 +3,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Success from './pages/Success';
 import Cancel from './pages/Cancel';
+import Catalogue from './pages/Catalogue';
 
 export default function App() {
   return (
@@ -16,7 +17,7 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/success" element={<Success />} />
           <Route path="/cancel" element={<Cancel />} />
-
+          <Route path="/catalogue" element={<Catalogue />} />
           
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

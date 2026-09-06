@@ -20,3 +20,9 @@ export interface IBooking {
   createdAt: string;
   updatedAt: string;
 }
+export interface IService {
+  _id: string;
+  nom: string;
+  description: string;
+  prix_base: number;
+}
