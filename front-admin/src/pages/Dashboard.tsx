@@ -492,8 +492,6 @@ useEffect(() => {
                         <p className="mt-2 text-sm leading-relaxed text-slate-500">{service.description}</p>
                       </div>
 
-                      {/* Les deux actions étaient hors de tout conteneur flex :
-                          elles s'empilaient sur toute la largeur de la carte. */}
                       <div className="mt-5 flex gap-2 border-t border-slate-100 pt-4">
                         <button onClick={() => setEditingService(service)} className={`${BTN_OUTLINE} flex-1`}>
                           Modifier

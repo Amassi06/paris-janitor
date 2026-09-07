@@ -69,16 +69,6 @@ export default function Vip() {
 
   const BTN = 'inline-flex w-full items-center justify-center rounded-control px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed';
 
-  const Feature = ({ ok, children }: { ok: boolean; children: React.ReactNode }) => (
-    <li className={`flex items-start gap-2.5 ${ok ? 'text-slate-700' : 'text-slate-400'}`}>
-      {ok ? (
-        <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
-      ) : (
-        <Minus className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" strokeWidth={2.5} />
-      )}
-      <span>{children}</span>
-    </li>
-  );
 
   if (loadingUser) {
     return (
@@ -125,9 +115,18 @@ export default function Vip() {
               <p className="mt-1 text-sm text-slate-500">Pour découvrir la plateforme</p>
 
               <ul className="mt-6 space-y-3 border-t border-slate-100 pt-6 text-sm">
-                <Feature ok>Publication d'avis</Feature>
-                <Feature ok={false}>Réductions sur les prestations</Feature>
-                <Feature ok={false}>Prestations offertes</Feature>
+                <li className="flex items-start gap-2.5 text-slate-700">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
+                  <span>Publication d'avis</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-slate-400">
+                  <Minus className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" strokeWidth={2.5} />
+                  <span>Réductions sur les prestations</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-slate-400">
+                  <Minus className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" strokeWidth={2.5} />
+                  <span>Prestations offertes</span>
+                </li>
               </ul>
             </div>
 
@@ -157,9 +156,18 @@ export default function Vip() {
               <p className="mt-1 text-sm text-slate-500">Pour les séjours réguliers</p>
 
               <ul className="mt-6 space-y-3 border-t border-slate-100 pt-6 text-sm">
-                <Feature ok>Navigation sans publicité</Feature>
-                <Feature ok>1 prestation offerte par an</Feature>
-                <Feature ok={false}>Réduction permanente</Feature>
+                <li className="flex items-start gap-2.5 text-slate-700">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
+                  <span>Navigation sans publicité</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-slate-700">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
+                  <span>1 prestation offerte par an</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-slate-400">
+                  <Minus className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" strokeWidth={2.5} />
+                  <span>Réduction permanente</span>
+                </li>
               </ul>
             </div>
 
@@ -180,7 +188,7 @@ export default function Vip() {
             </button>
           </div>
 
-          {/* Explorator — mis en avant */}
+          {/* Explorator */}
           <div
             className={`relative flex flex-col rounded-card border bg-white p-6 shadow-pop ${
               currentPlan === 'EXPLORATOR' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-900/10 ring-1 ring-slate-900/5'
@@ -200,9 +208,18 @@ export default function Vip() {
               <p className="mt-1 text-sm text-slate-500">L'offre la plus complète</p>
 
               <ul className="mt-6 space-y-3 border-t border-slate-100 pt-6 text-sm">
-                <Feature ok>Réduction permanente de 5 %</Feature>
-                <Feature ok>Accès prioritaire aux prestations VIP</Feature>
-                <Feature ok>Navigation sans publicité</Feature>
+                <li className="flex items-start gap-2.5 text-slate-700">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
+                  <span>Réduction permanente de 5 %</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-slate-700">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
+                  <span>Accès prioritaire aux prestations VIP</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-slate-700">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
+                  <span>Navigation sans publicité</span>
+                </li>
               </ul>
             </div>
 

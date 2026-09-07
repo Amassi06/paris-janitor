@@ -43,10 +43,6 @@
     border-radius: 4px;
   }
 
-  /* Tailwind v4 applique `cursor: default` aux boutons dans son preflight.
-     On rétablit le curseur main sur tout ce qui est cliquable, et le curseur
-     interdit sur ce qui est désactivé — une fois, plutôt qu'une classe
-     `cursor-pointer` répétée sur chaque bouton de l'application. */
   button:not(:disabled),
   [role='button']:not(:disabled),
   label[for],
