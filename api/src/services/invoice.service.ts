@@ -1,30 +1,20 @@
 import PDFDocument from 'pdfkit';
-import fs from 'fs';
-import path from 'path';
 import { IBooking } from '../models/Booking.js';
-import { Invoice } from '../models/Invoice.js';
+import { Invoice ,IInvoice} from '../models/Invoice.js';
 import { Service } from '../models/Service.js';
 
-export const generateInvoicePDF = async (booking: IBooking): Promise<string> => {
-  const invoicesDir = path.resolve('public/invoices');
-  if (!fs.existsSync(invoicesDir)) {
-    fs.mkdirSync(invoicesDir, { recursive: true });
-  }
-
+export const generateInvoicePDF = async (booking: IBooking): Promise<IInvoice> => {
 
   const numeroFacture = `INV-${booking._id}`;
-  const fileName = `${numeroFacture}.pdf`;
-
   const service = await Service.findById(booking.id_service);
   const serviceName = service?.nom ?? 'Prestation';
   const serviceDescription = service?.description ?? '';
-  const filePath = path.join(invoicesDir, fileName);
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50 });
-    const writeStream = fs.createWriteStream(filePath);
+    const chunks:Buffer[] = [];
 
-    doc.pipe(writeStream);
+    doc.on('data',(chunk)=>chunks.push(chunk));
 
     // ===== Constantes de mise en page =====
     const dateFacture = new Date().toLocaleDateString('fr-FR');
@@ -125,21 +115,21 @@ export const generateInvoicePDF = async (booking: IBooking): Promise<string> => 
 
     doc.end();
 
-    writeStream.on('finish', async () => {
+    doc.on('end', async () => {
       try {
-        const publicUrl = `/invoices/${fileName}`;
-        await Invoice.create({
+        const pdfBuffer = Buffer.concat(chunks);
+        const newInvoice = await Invoice.create({
           id_booking: booking._id,
           montant: booking.prix_final,
           numero_facture: numeroFacture,
-          url_pdf: publicUrl,
+          pdf_data: pdfBuffer,
         });
-        resolve(publicUrl);
+        resolve(newInvoice);
       } catch (err) {
         reject(err);
       }
     });
 
-    writeStream.on('error', (err) => reject(err));
+    doc.on('error', (err) => reject(err));
   });
 };

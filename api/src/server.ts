@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.routes.js';
 import serviceRoutes from './routes/service.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
+import invoiceRoutes from './routes/invoice.routes.js';
 import swaggerUi from 'swagger-ui-express';
 import { ENV } from './config/env.js';
 
@@ -19,7 +20,6 @@ dotenv.config();
 
 // Middlewares
 app.use(cors());
-app.use('/invoices', express.static(path.resolve('public/invoices')));
 app.post('/api/webhooks/stripe',express.raw({type:'application/json'}),handleStripeWebhook);
 app.use(express.json());
 
@@ -27,6 +27,7 @@ app.use('/api/auth',authRoutes)
 app.use('/api/services', serviceRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments',paymentRoutes);
+app.use('/api/invoices', invoiceRoutes);
 const swaggerFile = JSON.parse(
   fs.readFileSync(path.resolve('./src/swagger/swagger-output.json'), 'utf-8')
 );

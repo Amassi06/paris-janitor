@@ -115,6 +115,31 @@ const handleReview = async (bookingId: string) => {
       alert(err instanceof Error ? err.message : 'Erreur réseau.');
     }
   };
+  const handleViewInvoice = async (bookingId: string) => {
+  try {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_URL}/api/invoices/${bookingId}/download`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors du chargement de la facture');
+    }
+
+    const blob = await response.blob();
+    const fileUrl = window.URL.createObjectURL(blob);
+    window.open(fileUrl, '_blank');
+
+    setTimeout(() => window.URL.revokeObjectURL(fileUrl), 10000);
+  } catch (error) {
+    console.error(error);
+    alert('Impossible d’ouvrir la facture.');
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -172,14 +197,13 @@ const handleReview = async (bookingId: string) => {
                 )}
                 
                 {(booking.statut === BookingStatus.CONFIRMED ) && (
-                  <a
-                    href={`${API_URL}/invoices/INV-${booking._id}.pdf`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => handleViewInvoice(booking._id)}
                     className="rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition text-center flex items-center"
                   >
                     Voir la facture
-                  </a>
+                  </button>
                 )}
 
                 {booking.statut === BookingStatus.CONFIRMED && !booking.note && (
