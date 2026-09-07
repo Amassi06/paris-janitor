@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../types/env';
 import type { ReservationDTO } from '../types/reservation';
 import type { ServiceDTO } from '../types/service';
+import type { UserDTO } from '../types/user';
+
 
 export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState<'reservations' | 'services' | 'utilisateurs'>('reservations');
+  const [users, setUsers] = useState<UserDTO[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'reservations' | 'services'>('reservations');
   
   const [reservations, setReservations] = useState<ReservationDTO[]>([]);
   const [loadingResa, setLoadingResa] = useState(true);
@@ -23,7 +27,8 @@ export default function Dashboard() {
     navigate('/login');
   };
 
-  useEffect(() => {
+useEffect(() => {
+    // A. Déclaration des requêtes internes au useEffect
     const fetchReservations = async () => {
       try {
         const res = await fetch(`${API_URL}/api/bookings`, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -40,8 +45,19 @@ export default function Dashboard() {
       finally { setLoadingServices(false); }
     };
 
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/auth/users`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.ok) setUsers(await res.json());
+      } catch (error) { console.error('Erreur', error); }
+      finally { setLoadingUsers(false); }
+    };
+
+    // B. Exécution conditionnelle
     if (activeTab === 'reservations') fetchReservations();
     if (activeTab === 'services') fetchServices();
+    if (activeTab === 'utilisateurs') fetchUsers();
+
   }, [activeTab, token]);
 
   const handleCreateService = async (e: React.FormEvent) => {
@@ -117,6 +133,12 @@ export default function Dashboard() {
           >
             Catalogue Services
           </button>
+          <button 
+            onClick={() => setActiveTab('utilisateurs')}
+            className={`w-full text-left px-4 py-2.5 rounded font-medium text-sm transition ${activeTab === 'utilisateurs' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800'}`}
+            >
+            Utilisateurs
+            </button>
         </nav>
         <div className="p-4 border-t border-gray-800">
           <button onClick={handleLogout} className="w-full bg-red-500/10 text-red-500 py-2 rounded text-sm font-medium">Déconnexion</button>
@@ -231,6 +253,43 @@ export default function Dashboard() {
             )}
           </>
         )}
+        {activeTab === 'utilisateurs' && (
+  <>
+    <h1 className="text-3xl font-bold text-gray-900 mb-8">Gestion des Utilisateurs</h1>
+    {loadingUsers ? <p>Chargement...</p> : (
+      <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-gray-50 text-gray-700 font-semibold border-b">
+            <tr>
+              <th className="px-6 py-4">Email</th>
+              <th className="px-6 py-4">Rôle</th>
+              <th className="px-6 py-4">Abonnement</th>
+              <th className="px-6 py-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {users.map((user) => (
+              <tr key={user._id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 font-medium text-gray-900">{user.email}</td>
+                <td className="px-6 py-4">
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                    {user.role}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-gray-500">{user.subscription}</td>
+                <td className="px-6 py-4">
+                  <button className="text-red-600 hover:text-red-800 font-medium text-sm transition">
+                    Bannir
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </>
+)}
       </main>
     </div>
   );

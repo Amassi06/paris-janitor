@@ -99,3 +99,12 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
   // req.user est injecté par le middleware authenticate
   res.json({ user: req.user });
 };
+
+export const getAllUsers = async (re:Request, res:Response):Promise<void> =>{
+  try{
+    const users = await User.find().select('-password').sort({createdAt:-1});
+    res.json(users);
+  }catch(error){
+    res.status(500).json({message:'Erreur lors de la récupération des utilisateurs',error});
+  }
+};
