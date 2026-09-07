@@ -101,11 +101,8 @@ export default function Catalogue() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-8 flex items-center justify-between">
+          <div className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-800">Catalogue des Services</h1>
-          <button onClick={() => navigate('/dashboard')} className="text-blue-600 hover:underline">
-            Voir mes réservations
-          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

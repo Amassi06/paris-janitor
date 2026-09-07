@@ -133,6 +133,7 @@ useEffect(() => {
       <aside className="w-64 bg-gray-900 text-white flex flex-col">
         <div className="p-6 border-b border-gray-800">
           <h2 className="text-xl font-black tracking-tight">PARIS JANITOR</h2>
+          <span className="text-xs text-black-300 font-medium">Espace Administrateur</span>
         </div>
         <nav className="flex-1 p-4 space-y-2">
           <button 

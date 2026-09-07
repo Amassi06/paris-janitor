@@ -73,9 +73,7 @@ export default function Vip() {
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-800">Formules VIP</h1>
-          <button onClick={() => navigate('/dashboard')} className="text-blue-600 hover:underline">
-            Retour au Dashboard
-          </button>
+          
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
