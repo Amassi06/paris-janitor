@@ -1,6 +1,7 @@
 import { useState, type FormEventHandler } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { API_URL } from '../types/booking';
+import { Check, CircleAlert } from 'lucide-react';
 export default function Login() {
   const location = useLocation();
   const [isRegister, setIsRegister] = useState(location.pathname === '/register');
@@ -59,80 +60,125 @@ export default function Login() {
     }
   };
 
+  const INPUT =
+    'w-full rounded-control border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none';
+
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-lg bg-white p-6 shadow-md border border-gray-200"
-      >
-        <h1 className="mb-6 text-2xl font-bold text-center text-gray-800">
-          {isRegister ? 'Inscription' : 'Connexion'}
-        </h1>
-
-        {successMsg && (
-          <div className="mb-4 rounded bg-green-50 p-3 text-sm text-green-700 border border-green-200">
-            {successMsg}
-          </div>
-        )}
-
-        {error && (
-          <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600 border border-red-200">
-            {error}
-          </div>
-        )}
-
-        <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-            placeholder="test@example.com"
-          />
+    <div className="flex min-h-screen">
+      {/* Panneau de marque — masqué sous lg pour laisser toute la place au formulaire */}
+      <div className="relative hidden w-1/2 flex-col justify-between bg-brand-950 p-12 text-white lg:flex">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-sm font-bold ring-1 ring-inset ring-white/15">
+            PJ
+          </span>
+          <span className="text-sm font-semibold tracking-tight">Paris Janitor</span>
         </div>
 
-        <div className="mb-6">
-          <label className="mb-1 block text-sm font-medium text-gray-700">Mot de passe</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-            placeholder="••••••••"
-          />
+        <div className="max-w-md">
+          <h2 className="text-3xl font-semibold leading-tight tracking-tight">
+            Votre séjour, entièrement pris en charge.
+          </h2>
+          <p className="mt-4 text-sm leading-relaxed text-brand-200">
+            Réservez ménage, transferts, remise des clés et prestations sur mesure. Suivez vos
+            interventions et retrouvez toutes vos factures au même endroit.
+          </p>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded bg-blue-600 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition"
-        >
-          {loading 
-            ? 'Traitement en cours...' 
-            : isRegister ? "S'inscrire" : 'Se connecter'}
-        </button>
+        <p className="text-xs text-brand-300/70">© {new Date().getFullYear()} Paris Janitor — Conciergerie parisienne</p>
+      </div>
 
-        <div className="mt-4 text-center">
+      {/* Formulaire */}
+      <div className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
+        <form onSubmit={handleSubmit} className="w-full max-w-sm">
+          <div className="mb-8 lg:hidden">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-950 text-sm font-bold text-white">
+              PJ
+            </span>
+          </div>
+
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            {isRegister ? 'Créer un compte' : 'Connexion'}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {isRegister
+              ? 'Quelques secondes suffisent pour commencer à réserver.'
+              : 'Accédez à vos réservations et à vos factures.'}
+          </p>
+
+          {successMsg && (
+            <div className="mt-6 flex items-start gap-2.5 rounded-control border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+              <Check className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.5} />
+              <p>{successMsg}</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-6 flex items-start gap-2.5 rounded-control border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
+              <p>{error}</p>
+            </div>
+          )}
+
+          <div className="mt-8 space-y-4">
+            <div>
+              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={INPUT}
+                placeholder="vous@exemple.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
+                Mot de passe
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                autoComplete={isRegister ? 'new-password' : 'current-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={INPUT}
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+
           <button
-            type="button"
-            onClick={() => {
-              const nextIsRegister = !isRegister;
-              setIsRegister(nextIsRegister);
-              navigate(nextIsRegister ? '/register' : '/login');
-              setError(null);
-              setSuccessMsg(null);
-            }}
-            className="text-sm text-blue-600 hover:underline"
+            type="submit"
+            disabled={loading}
+            className="mt-7 w-full rounded-control bg-brand-600 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700 disabled:opacity-50"
           >
-            {isRegister 
-              ? "Déjà un compte ? Se connecter" 
-              : "Pas de compte ? S'inscrire"}
+            {loading ? 'Traitement en cours…' : isRegister ? "S'inscrire" : 'Se connecter'}
           </button>
-        </div>
-      </form>
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            {isRegister ? 'Déjà un compte ?' : 'Pas encore de compte ?'}{' '}
+            <button
+              type="button"
+              onClick={() => {
+                const nextIsRegister = !isRegister;
+                setIsRegister(nextIsRegister);
+                navigate(nextIsRegister ? '/register' : '/login');
+                setError(null);
+                setSuccessMsg(null);
+              }}
+              className="font-medium text-brand-600 underline-offset-4 hover:underline"
+            >
+              {isRegister ? 'Se connecter' : "S'inscrire"}
+            </button>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

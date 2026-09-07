@@ -1,19 +1,26 @@
 import { Link } from 'react-router-dom';
+import { Check } from 'lucide-react';
 
 export default function Success() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-4">
-      <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-3xl mb-4 font-bold">
-        ✓
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12">
+      <div className="w-full max-w-md rounded-card border border-slate-200 bg-white p-8 text-center shadow-card">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-inset ring-emerald-600/20">
+          <Check className="h-6 w-6" strokeWidth={2.5} />
+        </div>
+
+        <h1 className="mt-5 text-xl font-semibold tracking-tight text-slate-900">Paiement confirmé</h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          Votre réservation est enregistrée et votre facture est disponible dans votre espace.
+        </p>
+
+        <Link
+          to="/dashboard"
+          className="mt-7 inline-flex w-full items-center justify-center rounded-control bg-brand-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700"
+        >
+          Voir mes réservations
+        </Link>
       </div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Paiement Réussi !</h1>
-      <p className="text-gray-600 mb-6">Ta réservation a bien été enregistrée et ta facture est disponible.</p>
-      <Link
-        to="/dashboard"
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-      >
-        Retour à l'accueil
-      </Link>
     </div>
   );
 }

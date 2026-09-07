@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../types/env';
+import { CircleAlert } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -52,55 +53,78 @@ export default function Login() {
     }
   };
 
+  const INPUT =
+    'w-full rounded-control border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-slate-900 focus:outline-none';
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-lg bg-white p-8 shadow-xl border border-gray-200"
-      >
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-6 py-12">
+      <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">PARIS JANITOR</h1>
-          <p className="text-sm font-semibold text-red-600 uppercase tracking-widest mt-1">Espace Administrateur</p>
+          <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-sm font-bold text-white">
+            PJ
+          </span>
+          <h1 className="mt-4 text-xl font-semibold tracking-tight text-slate-900">Paris Janitor</h1>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest text-slate-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+            Espace administrateur
+          </p>
         </div>
 
-        {error && (
-          <div className="mb-6 rounded bg-red-50 p-3 text-sm font-medium text-red-700 border border-red-200">
-            {error}
+        <form onSubmit={handleSubmit} className="rounded-card border border-slate-200 bg-white p-7 shadow-card">
+          {error && (
+            <div className="mb-6 flex items-start gap-2.5 rounded-control border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
+              <p>{error}</p>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
+                Email professionnel
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={INPUT}
+                placeholder="admin@paris-janitor.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
+                Mot de passe
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={INPUT}
+                placeholder="••••••••"
+              />
+            </div>
           </div>
-        )}
 
-        <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700">Email professionnel</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none transition"
-            placeholder="admin@paris-janitor.com"
-          />
-        </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-7 w-full rounded-control bg-slate-900 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800 disabled:opacity-50"
+          >
+            {loading ? 'Authentification…' : 'Accéder au panel'}
+          </button>
+        </form>
 
-        <div className="mb-6">
-          <label className="mb-1 block text-sm font-medium text-gray-700">Mot de passe</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none transition"
-            placeholder="••••••••"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded bg-gray-900 py-2.5 font-medium text-white hover:bg-black disabled:opacity-50 transition"
-        >
-          {loading ? 'Authentification...' : 'Accéder au panel'}
-        </button>
-      </form>
+        <p className="mt-6 text-center text-xs text-slate-400">
+          Accès restreint aux comptes disposant du rôle administrateur.
+        </p>
+      </div>
     </div>
   );
 }

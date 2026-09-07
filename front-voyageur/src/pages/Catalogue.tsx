@@ -96,57 +96,79 @@ export default function Catalogue() {
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Chargement des prestations...</div>;
+  const BTN = 'inline-flex items-center justify-center gap-1.5 rounded-control px-3.5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 
   return (
-  <div className="min-h-screen bg-white">
-  <div className="mx-auto max-w-3xl px-6 py-16">
-    <h1 className="text-2xl font-medium text-neutral-900 mb-10">
-      Catalogue des services
-    </h1>
-
-    <div className="divide-y divide-neutral-200">
-      {services.map((service) => (
-        <div key={service._id} className="py-8 first:pt-0">
-          <div className="flex items-baseline justify-between gap-4">
-            <h2 className="text-lg font-medium text-neutral-900">
-              {service.nom}
-            </h2>
-            <span className="text-sm text-neutral-500 whitespace-nowrap">
-              à partir de {service.prix_base} €
-            </span>
-          </div>
-
-          <p className="text-neutral-600 text-sm mt-1.5 max-w-xl">
-            {service.description}
+    <div className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-5xl px-6 py-10 sm:px-8 sm:py-12">
+        <header className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Catalogue des services</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Choisissez une prestation, indiquez la date d'intervention souhaitée et confirmez.
           </p>
+        </header>
 
-          <div className="mt-5 flex flex-wrap items-end gap-4">
-            <div className="flex-1 min-w-[220px]">
-              <label className="block text-xs text-neutral-500 mb-1.5">
-                Date d'intervention
-              </label>
-              <input
-                type="datetime-local"
-                min={getCurrentDateTimeLocal()}
-                className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none transition-colors"
-                value={dates[service._id] || ''}
-                onChange={(e) => handleDateChange(service._id, e.target.value)}
-              />
-            </div>
-
-            <button
-              onClick={() => handleBook(service._id)}
-              disabled={bookingId === service._id}
-              className="cursor-pointer text-sm font-medium text-white bg-neutral-900 px-5 py-2 rounded-sm hover:bg-neutral-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {bookingId === service._id ? 'Réservation…' : 'Réserver'}
-            </button>
+        {loading ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse rounded-card border border-slate-200 bg-white p-6 shadow-card">
+                <div className="h-4 w-40 rounded-full bg-slate-200" />
+                <div className="mt-3 h-3 w-full rounded-full bg-slate-100" />
+                <div className="mt-2 h-3 w-2/3 rounded-full bg-slate-100" />
+                <div className="mt-6 h-9 w-full rounded-control bg-slate-100" />
+              </div>
+            ))}
           </div>
-        </div>
-      ))}
+        ) : services.length === 0 ? (
+          <div className="rounded-card border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+            <h2 className="text-sm font-semibold text-slate-900">Aucune prestation disponible</h2>
+            <p className="mt-1 text-sm text-slate-500">Le catalogue sera enrichi prochainement.</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {services.map((service) => (
+              <article
+                key={service._id}
+                className="flex flex-col rounded-card border border-slate-200 bg-white p-6 shadow-card transition-shadow hover:shadow-raised"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <h2 className="text-base font-semibold tracking-tight text-slate-900">{service.nom}</h2>
+                  <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-slate-700">
+                    {service.prix_base} €
+                  </span>
+                </div>
+
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500">{service.description}</p>
+
+                <div className="mt-6 border-t border-slate-100 pt-4">
+                  <label
+                    htmlFor={`date-${service._id}`}
+                    className="block text-xs font-medium text-slate-500"
+                  >
+                    Date d'intervention
+                  </label>
+                  <input
+                    id={`date-${service._id}`}
+                    type="datetime-local"
+                    min={getCurrentDateTimeLocal()}
+                    className="mt-1.5 w-full rounded-control border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-brand-500 focus:outline-none"
+                    value={dates[service._id] || ''}
+                    onChange={(e) => handleDateChange(service._id, e.target.value)}
+                  />
+
+                  <button
+                    onClick={() => handleBook(service._id)}
+                    disabled={bookingId === service._id}
+                    className={`${BTN} mt-3 w-full bg-brand-600 text-white shadow-sm hover:bg-brand-700`}
+                  >
+                    {bookingId === service._id ? 'Réservation…' : 'Réserver'}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-</div>
   );
 }

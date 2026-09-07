@@ -4,13 +4,14 @@ import { API_URL } from '../types/env';
 import type { ReservationDTO } from '../types/reservation';
 import type { ServiceDTO } from '../types/service';
 import type { UserDTO } from '../types/user';
+import { CalendarDays, LayoutGrid, Users, LogOut, Star } from 'lucide-react';
 
 
 const STATUT_STYLE: Record<string, string> = {
-  PENDING: 'bg-orange-100 text-orange-700',
-  CONFIRMED: 'bg-green-100 text-green-700',
-  COMPLETED: 'bg-blue-100 text-blue-700',
-  CANCELLED: 'bg-red-100 text-red-700',
+  PENDING: 'bg-amber-50 text-amber-700 ring-amber-600/20',
+  CONFIRMED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  COMPLETED: 'bg-brand-50 text-brand-700 ring-brand-600/20',
+  CANCELLED: 'bg-red-50 text-red-700 ring-red-600/20',
 };
 
 const STATUT_LABEL: Record<string, string> = {
@@ -19,6 +20,20 @@ const STATUT_LABEL: Record<string, string> = {
   COMPLETED: 'Réalisée',
   CANCELLED: 'Annulée',
 };
+
+const CARD = 'rounded-card border border-slate-200 bg-white shadow-card';
+const INPUT =
+  'w-full rounded-control border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none';
+const BTN = 'inline-flex items-center justify-center gap-1.5 rounded-control px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50';
+const BTN_DARK = `${BTN} bg-slate-900 text-white shadow-sm hover:bg-slate-800`;
+const BTN_BRAND = `${BTN} bg-brand-600 text-white shadow-sm hover:bg-brand-700`;
+const BTN_OUTLINE = `${BTN} bg-white text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50`;
+const BTN_DANGER = `${BTN} bg-white text-red-600 ring-1 ring-inset ring-red-200 hover:bg-red-50`;
+const TH = 'px-6 py-3.5 text-xs font-semibold uppercase tracking-wide text-slate-500';
+const TD = 'px-6 py-4 align-middle';
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'reservations' | 'services' | 'utilisateurs'>('reservations');
@@ -161,210 +176,401 @@ useEffect(() => {
     }
   };
 
+  const tabs = [
+    { id: 'reservations', label: 'Réservations', icon: <CalendarDays className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} /> },
+    { id: 'services', label: 'Catalogue', icon: <LayoutGrid className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} /> },
+    { id: 'utilisateurs', label: 'Utilisateurs', icon: <Users className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} /> },
+  ] as const;
+
   return (
-    <div className="flex h-screen bg-gray-50 font-sans">
-      <aside className="w-64 bg-gray-900 text-white flex flex-col">
-        <div className="p-6 border-b border-gray-800">
-          <h2 className="text-xl font-black tracking-tight">PARIS JANITOR</h2>
-          <span className="text-xs text-black-300 font-medium">Espace Administrateur</span>
+    <div className="flex h-screen bg-slate-50">
+      {/* SIDEBAR ADMIN */}
+      <aside className="flex w-64 shrink-0 flex-col bg-slate-900 text-white">
+        <div className="px-5 py-6">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-sm font-bold ring-1 ring-inset ring-white/15">
+              PJ
+            </span>
+            <div className="leading-tight">
+              <p className="text-sm font-semibold tracking-tight">Paris Janitor</p>
+              <p className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                Administration
+              </p>
+            </div>
+          </div>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
-          <button 
-            onClick={() => setActiveTab('reservations')}
-            className={`w-full text-left px-4 py-2.5 rounded font-medium text-sm transition ${activeTab === 'reservations' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800'}`}
-          >
-            Réservations
-          </button>
-          <button 
-            onClick={() => setActiveTab('services')}
-            className={`w-full text-left px-4 py-2.5 rounded font-medium text-sm transition ${activeTab === 'services' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800'}`}
-          >
-            Catalogue Services
-          </button>
-          <button 
-            onClick={() => setActiveTab('utilisateurs')}
-            className={`w-full text-left px-4 py-2.5 rounded font-medium text-sm transition ${activeTab === 'utilisateurs' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800'}`}
-            >
-            Utilisateurs
-            </button>
+
+        <nav className="flex-1 space-y-1 px-3">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                aria-current={isActive ? 'page' : undefined}
+                className={`group relative flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                  isActive ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <span
+                  className={`absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-white transition-opacity ${
+                    isActive ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+                <span className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-white'}>{tab.icon}</span>
+                {tab.label}
+              </button>
+            );
+          })}
         </nav>
-        <div className="p-4 border-t border-gray-800">
-          <button onClick={handleLogout} className="w-full bg-red-500/10 text-red-500 py-2 rounded text-sm font-medium">Déconnexion</button>
+
+        <div className="border-t border-white/10 p-3">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center justify-center gap-2 rounded-control px-3 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:bg-red-500/15 hover:text-red-300"
+          >
+            <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+            Déconnexion
+          </button>
         </div>
       </aside>
 
-      <main className="flex-1 p-8 overflow-y-auto">
-        
-        {activeTab === 'reservations' && (
-          <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Toutes les réservations</h1>
-            {loadingResa ? <p>Chargement...</p> : (
-              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-50 text-gray-700 font-semibold border-b">
-                    <tr>
-                      <th className="px-6 py-4">Client</th>
-                      <th className="px-6 py-4">Service</th>
-                      <th className="px-6 py-4">Date</th>
-                      <th className="px-6 py-4">Prix</th>
-                      <th className="px-6 py-4">Statut</th>
-                      <th className="px-6 py-4">Note</th>
-                      <th className="px-6 py-4">Commentaire</th>
-                      <th className="px-6 py-4">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {reservations.map((resa) => (
-                      <tr key={resa._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 font-medium text-gray-900">{resa.id_voyageur?.email || 'N/A'}</td>
-                        <td className="px-6 py-4 text-gray-600">{resa.id_service?.nom || 'N/A'}</td>
-                        <td className="px-6 py-4 text-gray-500">{new Date(resa.date_prestation).toLocaleDateString('fr-FR')}</td>
-                        <td className="px-6 py-4 font-bold text-gray-900">{resa.prix_final} €</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${STATUT_STYLE[resa.statut]}`}>
-                            {STATUT_LABEL[resa.statut]}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">{resa.note || 'N/A'}</td>
-                        <td className="px-6 py-4 text-gray-600">{resa.commentaire || 'N/A'}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            {resa.statut === 'CONFIRMED' && (
-                              <button
-                                onClick={() => handleUpdateStatus(resa._id, 'COMPLETED')}
-                                className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-blue-700 transition"
-                              >
-                                Marquer réalisée
-                              </button>
-                            )}
-                            {(resa.statut === 'PENDING' || resa.statut === 'CONFIRMED') && (
-                              <button
-                                onClick={() => handleUpdateStatus(resa._id, 'CANCELLED')}
-                                className="bg-white text-red-600 border border-red-200 px-3 py-1.5 rounded text-xs font-medium hover:bg-red-50 transition"
-                              >
-                                Annuler
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>
-        )}
+      <main className="min-w-0 flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-6xl px-8 py-10">
 
-        {activeTab === 'services' && (
-          <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Catalogue des Services</h1>
-            
-            {editingService ? (
-              <form onSubmit={handleUpdateService} className="bg-blue-50 p-6 rounded-lg shadow border border-blue-200 mb-8 flex gap-4 items-end">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-blue-900 mb-1">Modifier le nom</label>
-                  <input required type="text" value={editingService.nom} onChange={e => setEditingService({...editingService, nom: e.target.value})} className="w-full border border-blue-300 rounded p-2 text-sm" />
+          {/* ---------------- RÉSERVATIONS ---------------- */}
+          {activeTab === 'reservations' && (
+            <>
+              <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Réservations</h1>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Suivez le paiement, clôturez les prestations réalisées et gérez les annulations.
+                  </p>
                 </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-blue-900 mb-1">Modifier la description</label>
-                  <input required type="text" value={editingService.description} onChange={e => setEditingService({...editingService, description: e.target.value})} className="w-full border border-blue-300 rounded p-2 text-sm" />
-                </div>
-                <div className="w-32">
-                  <label className="block text-sm font-medium text-blue-900 mb-1">Prix (€)</label>
-                  <input required type="number" min="0" value={editingService.prix_base} onChange={e => setEditingService({...editingService, prix_base: Number(e.target.value)})} className="w-full border border-blue-300 rounded p-2 text-sm" />
-                </div>
-                <div className="flex gap-2">
-                  <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded font-medium hover:bg-blue-700 transition">Sauver</button>
-                  <button type="button" onClick={() => setEditingService(null)} className="bg-white text-gray-600 px-4 py-2 rounded border border-gray-300 font-medium hover:bg-gray-50 transition">Annuler</button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleCreateService} className="bg-white p-6 rounded-lg shadow border border-gray-200 mb-8 flex gap-4 items-end">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom du service</label>
-                  <input required type="text" value={newService.nom} onChange={e => setNewService({...newService, nom: e.target.value})} className="w-full border rounded p-2 text-sm" placeholder="Ex: Ménage complet" />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <input required type="text" value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} className="w-full border rounded p-2 text-sm" placeholder="Ex: Nettoyage 2h" />
-                </div>
-                <div className="w-32">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Prix (€)</label>
-                  <input required type="number" min="0" value={newService.prix_base} onChange={e => setNewService({...newService, prix_base: Number(e.target.value)})} className="w-full border rounded p-2 text-sm" />
-                </div>
-                <button type="submit" className="bg-gray-900 text-white px-6 py-2 rounded font-medium hover:bg-black transition">
-                  Ajouter
-                </button>
-              </form>
-            )}
-
-            {loadingServices ? <p>Chargement...</p> : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {services.map(service => (
-                  <div key={service._id} className="bg-white p-6 rounded-lg shadow border border-gray-200 flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-bold text-lg text-gray-900">{service.nom}</h3>
-                      <p className="text-gray-500 text-sm mt-1">{service.description}</p>
-                      <p className="text-2xl font-black text-gray-900 mt-4">{service.prix_base} €</p>
-                    </div>
-                  <button 
-                        onClick={() => setEditingService(service)}
-                        className="flex-1 border border-yellow-200 text-yellow-600 hover:bg-yellow-50 py-2 rounded text-sm font-medium transition"
-                      >
-                        Modifier
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteService(service._id)}
-                        className="flex-1 border border-red-200 text-red-600 hover:bg-red-50 py-2 rounded text-sm font-medium transition"
-                      >
-                        Supprimer
-                      </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-        {activeTab === 'utilisateurs' && (
-  <>
-    <h1 className="text-3xl font-bold text-gray-900 mb-8">Gestion des Utilisateurs</h1>
-    {loadingUsers ? <p>Chargement...</p> : (
-      <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 text-gray-700 font-semibold border-b">
-            <tr>
-              <th className="px-6 py-4">Email</th>
-              <th className="px-6 py-4">Rôle</th>
-              <th className="px-6 py-4">Abonnement</th>
-              <th className="px-6 py-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {users.map((user) => (
-              <tr key={user._id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium text-gray-900">{user.email}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {user.role}
+                {!loadingResa && reservations.length > 0 && (
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
+                    {reservations.length} au total
                   </span>
-                </td>
-                <td className="px-6 py-4 text-gray-500">{user.subscription}</td>
-                <td className="px-6 py-4">
-                  <button className="text-red-600 hover:text-red-800 font-medium text-sm transition"
-                  onClick={()=>handleBanUser(user._id)}
-                  >
-                    Bannir
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )}
-  </>
-)}
+                )}
+              </header>
+
+              {loadingResa ? (
+                <div className={`${CARD} divide-y divide-slate-100`}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="animate-pulse px-6 py-5">
+                      <div className="h-3.5 w-56 rounded-full bg-slate-200" />
+                    </div>
+                  ))}
+                </div>
+              ) : reservations.length === 0 ? (
+                <div className="rounded-card border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+                  <h2 className="text-sm font-semibold text-slate-900">Aucune réservation</h2>
+                  <p className="mt-1 text-sm text-slate-500">Les réservations des voyageurs apparaîtront ici.</p>
+                </div>
+              ) : (
+                <div className={`${CARD} overflow-x-auto`}>
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-slate-200 bg-slate-50/80">
+                      <tr>
+                        <th className={TH}>Client</th>
+                        <th className={TH}>Service</th>
+                        <th className={TH}>Date</th>
+                        <th className={`${TH} text-right`}>Prix</th>
+                        <th className={TH}>Statut</th>
+                        <th className={TH}>Avis</th>
+                        <th className={`${TH} text-right`}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {reservations.map((resa) => (
+                        <tr key={resa._id} className="transition-colors hover:bg-slate-50/70">
+                          <td className={`${TD} font-medium text-slate-900`}>
+                            {resa.id_voyageur?.email || <span className="text-slate-400">—</span>}
+                          </td>
+                          <td className={`${TD} text-slate-600`}>
+                            {resa.id_service?.nom || <span className="text-slate-400">—</span>}
+                          </td>
+                          <td className={`${TD} whitespace-nowrap text-slate-500`}>
+                            {formatDate(resa.date_prestation)}
+                          </td>
+                          <td className={`${TD} whitespace-nowrap text-right font-semibold tabular-nums text-slate-900`}>
+                            {resa.prix_final} €
+                          </td>
+                          <td className={TD}>
+                            <span
+                              className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${STATUT_STYLE[resa.statut]}`}
+                            >
+                              {STATUT_LABEL[resa.statut]}
+                            </span>
+                          </td>
+                          <td className={TD}>
+                            {resa.note ? (
+                              <div className="max-w-[16rem]">
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600">
+                                  <Star className="h-3.5 w-3.5 fill-current" strokeWidth={0} />
+                                  {resa.note}/5
+                                </span>
+                                {resa.commentaire && (
+                                  <p
+                                    className="mt-1 line-clamp-2 break-words text-xs text-slate-500"
+                                    title={resa.commentaire}
+                                  >
+                                    {resa.commentaire}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </td>
+                          <td className={`${TD} whitespace-nowrap text-right`}>
+                            <div className="flex justify-end gap-2">
+                              {resa.statut === 'CONFIRMED' && (
+                                <button
+                                  onClick={() => handleUpdateStatus(resa._id, 'COMPLETED')}
+                                  className={`${BTN_BRAND} px-3 py-1.5 text-xs`}
+                                >
+                                  Marquer réalisée
+                                </button>
+                              )}
+                              {(resa.statut === 'PENDING' || resa.statut === 'CONFIRMED') && (
+                                <button
+                                  onClick={() => handleUpdateStatus(resa._id, 'CANCELLED')}
+                                  className={`${BTN_DANGER} px-3 py-1.5 text-xs`}
+                                >
+                                  Annuler
+                                </button>
+                              )}
+                              {(resa.statut === 'COMPLETED' || resa.statut === 'CANCELLED') && (
+                                <span className="text-xs text-slate-300">—</span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ---------------- CATALOGUE ---------------- */}
+          {activeTab === 'services' && (
+            <>
+              <header className="mb-8">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Catalogue des services</h1>
+                <p className="mt-1 text-sm text-slate-500">
+                  Créez, modifiez et retirez les prestations proposées aux voyageurs.
+                </p>
+              </header>
+
+              {editingService ? (
+                <form
+                  onSubmit={handleUpdateService}
+                  className="mb-8 rounded-card border border-brand-200 bg-brand-50/60 p-6"
+                >
+                  <div className="mb-4 flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-brand-600" />
+                    <h2 className="text-sm font-semibold text-brand-900">Modification en cours</h2>
+                  </div>
+
+                  <div className="flex flex-wrap items-end gap-4">
+                    <div className="min-w-[12rem] flex-1">
+                      <label className="mb-1.5 block text-xs font-medium text-slate-600">Nom</label>
+                      <input
+                        required
+                        type="text"
+                        value={editingService.nom}
+                        onChange={(e) => setEditingService({ ...editingService, nom: e.target.value })}
+                        className={INPUT}
+                      />
+                    </div>
+                    <div className="min-w-[12rem] flex-1">
+                      <label className="mb-1.5 block text-xs font-medium text-slate-600">Description</label>
+                      <input
+                        required
+                        type="text"
+                        value={editingService.description}
+                        onChange={(e) => setEditingService({ ...editingService, description: e.target.value })}
+                        className={INPUT}
+                      />
+                    </div>
+                    <div className="w-28">
+                      <label className="mb-1.5 block text-xs font-medium text-slate-600">Prix (€)</label>
+                      <input
+                        required
+                        type="number"
+                        min="0"
+                        value={editingService.prix_base}
+                        onChange={(e) => setEditingService({ ...editingService, prix_base: Number(e.target.value) })}
+                        className={INPUT}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="submit" className={BTN_BRAND}>Enregistrer</button>
+                      <button type="button" onClick={() => setEditingService(null)} className={BTN_OUTLINE}>
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleCreateService} className={`${CARD} mb-8 p-6`}>
+                  <h2 className="mb-4 text-sm font-semibold text-slate-900">Ajouter une prestation</h2>
+                  <div className="flex flex-wrap items-end gap-4">
+                    <div className="min-w-[12rem] flex-1">
+                      <label className="mb-1.5 block text-xs font-medium text-slate-600">Nom du service</label>
+                      <input
+                        required
+                        type="text"
+                        value={newService.nom}
+                        onChange={(e) => setNewService({ ...newService, nom: e.target.value })}
+                        className={INPUT}
+                        placeholder="Ex : Ménage complet"
+                      />
+                    </div>
+                    <div className="min-w-[12rem] flex-1">
+                      <label className="mb-1.5 block text-xs font-medium text-slate-600">Description</label>
+                      <input
+                        required
+                        type="text"
+                        value={newService.description}
+                        onChange={(e) => setNewService({ ...newService, description: e.target.value })}
+                        className={INPUT}
+                        placeholder="Ex : Nettoyage 2h, produits inclus"
+                      />
+                    </div>
+                    <div className="w-28">
+                      <label className="mb-1.5 block text-xs font-medium text-slate-600">Prix (€)</label>
+                      <input
+                        required
+                        type="number"
+                        min="0"
+                        value={newService.prix_base}
+                        onChange={(e) => setNewService({ ...newService, prix_base: Number(e.target.value) })}
+                        className={INPUT}
+                      />
+                    </div>
+                    <button type="submit" className={BTN_DARK}>Ajouter</button>
+                  </div>
+                </form>
+              )}
+
+              {loadingServices ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className={`${CARD} animate-pulse p-6`}>
+                      <div className="h-4 w-32 rounded-full bg-slate-200" />
+                      <div className="mt-3 h-3 w-full rounded-full bg-slate-100" />
+                      <div className="mt-6 h-7 w-20 rounded-full bg-slate-100" />
+                    </div>
+                  ))}
+                </div>
+              ) : services.length === 0 ? (
+                <div className="rounded-card border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+                  <h2 className="text-sm font-semibold text-slate-900">Catalogue vide</h2>
+                  <p className="mt-1 text-sm text-slate-500">Ajoutez une première prestation ci-dessus.</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {services.map((service) => (
+                    <div key={service._id} className={`${CARD} flex flex-col p-6`}>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <h3 className="text-base font-semibold tracking-tight text-slate-900">{service.nom}</h3>
+                          <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-slate-700">
+                            {service.prix_base} €
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm leading-relaxed text-slate-500">{service.description}</p>
+                      </div>
+
+                      {/* Les deux actions étaient hors de tout conteneur flex :
+                          elles s'empilaient sur toute la largeur de la carte. */}
+                      <div className="mt-5 flex gap-2 border-t border-slate-100 pt-4">
+                        <button onClick={() => setEditingService(service)} className={`${BTN_OUTLINE} flex-1`}>
+                          Modifier
+                        </button>
+                        <button onClick={() => handleDeleteService(service._id)} className={`${BTN_DANGER} flex-1`}>
+                          Supprimer
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ---------------- UTILISATEURS ---------------- */}
+          {activeTab === 'utilisateurs' && (
+            <>
+              <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Utilisateurs</h1>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Comptes voyageurs et administrateurs enregistrés sur la plateforme.
+                  </p>
+                </div>
+                {!loadingUsers && users.length > 0 && (
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
+                    {users.length} compte{users.length > 1 ? 's' : ''}
+                  </span>
+                )}
+              </header>
+
+              {loadingUsers ? (
+                <div className={`${CARD} divide-y divide-slate-100`}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="animate-pulse px-6 py-5">
+                      <div className="h-3.5 w-48 rounded-full bg-slate-200" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={`${CARD} overflow-x-auto`}>
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-slate-200 bg-slate-50/80">
+                      <tr>
+                        <th className={TH}>Email</th>
+                        <th className={TH}>Rôle</th>
+                        <th className={TH}>Abonnement</th>
+                        <th className={`${TH} text-right`}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {users.map((user) => (
+                        <tr key={user._id} className="transition-colors hover:bg-slate-50/70">
+                          <td className={`${TD} font-medium text-slate-900`}>{user.email}</td>
+                          <td className={TD}>
+                            <span
+                              className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
+                                user.role === 'ADMIN'
+                                  ? 'bg-purple-50 text-purple-700 ring-purple-600/20'
+                                  : 'bg-slate-100 text-slate-600 ring-slate-500/15'
+                              }`}
+                            >
+                              {user.role}
+                            </span>
+                          </td>
+                          <td className={`${TD} text-slate-500`}>{user.subscription}</td>
+                          <td className={`${TD} whitespace-nowrap text-right`}>
+                            <button onClick={() => handleBanUser(user._id)} className={`${BTN_DANGER} px-3 py-1.5 text-xs`}>
+                              Bannir
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </main>
     </div>
   );
