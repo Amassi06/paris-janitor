@@ -313,10 +313,14 @@ const handleCancel = async (bookingId: string) => {
               </div>
 
               {booking.commentaire && (
-                <p className="mt-4 border-t border-slate-100 pt-3 text-sm text-slate-600">
-                  <span className="font-medium text-slate-500">Votre avis : </span>
-                  {booking.commentaire}
-                </p>
+                <div className="mt-4 border-t border-slate-100 pt-3">
+                  <p className="text-xs font-medium text-slate-500">Votre avis</p>
+                  {/* wrap-anywhere plutôt que break-words : un avis d'un seul
+                      mot de 1000 caractères doit pouvoir être coupé n'importe où. */}
+                  <p className="mt-1 wrap-anywhere text-sm leading-relaxed text-slate-600">
+                    {booking.commentaire}
+                  </p>
+                </div>
               )}
             </article>
           ))}

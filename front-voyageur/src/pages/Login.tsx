@@ -64,62 +64,39 @@ export default function Login() {
     'w-full rounded-control border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none';
 
   return (
-    <div className="flex min-h-screen">
-      {/* Panneau de marque — masqué sous lg pour laisser toute la place au formulaire */}
-      <div className="relative hidden w-1/2 flex-col justify-between bg-brand-950 p-12 text-white lg:flex">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-sm font-bold ring-1 ring-inset ring-white/15">
+    <div className="flex min-h-screen items-center justify-center bg-brand-50 px-6 py-12">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 text-center">
+          <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-brand-600 text-sm font-bold text-white">
             PJ
           </span>
-          <span className="text-sm font-semibold tracking-tight">Paris Janitor</span>
+          <h1 className="mt-4 text-xl font-semibold tracking-tight text-slate-900">Paris Janitor</h1>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest text-slate-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+            Espace voyageur
+          </p>
         </div>
 
-        <div className="max-w-md">
-          <h2 className="text-3xl font-semibold leading-tight tracking-tight">
-            Votre séjour, entièrement pris en charge.
+        <form onSubmit={handleSubmit} className="rounded-card border border-slate-200 bg-white p-7 shadow-card">
+          <h2 className="mb-6 text-center text-sm font-semibold text-slate-900">
+            {isRegister ? 'Créer un compte' : 'Connexion à votre espace'}
           </h2>
-          <p className="mt-4 text-sm leading-relaxed text-brand-200">
-            Réservez ménage, transferts, remise des clés et prestations sur mesure. Suivez vos
-            interventions et retrouvez toutes vos factures au même endroit.
-          </p>
-        </div>
-
-        <p className="text-xs text-brand-300/70">© {new Date().getFullYear()} Paris Janitor — Conciergerie parisienne</p>
-      </div>
-
-      {/* Formulaire */}
-      <div className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
-        <form onSubmit={handleSubmit} className="w-full max-w-sm">
-          <div className="mb-8 lg:hidden">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-950 text-sm font-bold text-white">
-              PJ
-            </span>
-          </div>
-
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            {isRegister ? 'Créer un compte' : 'Connexion'}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {isRegister
-              ? 'Quelques secondes suffisent pour commencer à réserver.'
-              : 'Accédez à vos réservations et à vos factures.'}
-          </p>
 
           {successMsg && (
-            <div className="mt-6 flex items-start gap-2.5 rounded-control border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+            <div className="mb-6 flex items-start gap-2.5 rounded-control border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
               <Check className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.5} />
               <p>{successMsg}</p>
             </div>
           )}
 
           {error && (
-            <div className="mt-6 flex items-start gap-2.5 rounded-control border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="mb-6 flex items-start gap-2.5 rounded-control border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
               <p>{error}</p>
             </div>
           )}
 
-          <div className="mt-8 space-y-4">
+          <div className="space-y-4">
             <div>
               <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
                 Email
@@ -178,6 +155,8 @@ export default function Login() {
             </button>
           </p>
         </form>
+
+       
       </div>
     </div>
   );

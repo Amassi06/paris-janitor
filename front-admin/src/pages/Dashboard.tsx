@@ -287,10 +287,14 @@ useEffect(() => {
                       {reservations.map((resa) => (
                         <tr key={resa._id} className="transition-colors hover:bg-slate-50/70">
                           <td className={`${TD} font-medium text-slate-900`}>
-                            {resa.id_voyageur?.email || <span className="text-slate-400">—</span>}
+                            <span className="block max-w-[14rem] wrap-anywhere">
+                              {resa.id_voyageur?.email || <span className="text-slate-400">—</span>}
+                            </span>
                           </td>
                           <td className={`${TD} text-slate-600`}>
-                            {resa.id_service?.nom || <span className="text-slate-400">—</span>}
+                            <span className="block max-w-[12rem] wrap-anywhere">
+                              {resa.id_service?.nom || <span className="text-slate-400">—</span>}
+                            </span>
                           </td>
                           <td className={`${TD} whitespace-nowrap text-slate-500`}>
                             {formatDate(resa.date_prestation)}
@@ -314,7 +318,7 @@ useEffect(() => {
                                 </span>
                                 {resa.commentaire && (
                                   <p
-                                    className="mt-1 line-clamp-2 break-words text-xs text-slate-500"
+                                    className="mt-1 line-clamp-2 wrap-anywhere text-xs text-slate-500"
                                     title={resa.commentaire}
                                   >
                                     {resa.commentaire}
@@ -544,7 +548,9 @@ useEffect(() => {
                     <tbody className="divide-y divide-slate-100">
                       {users.map((user) => (
                         <tr key={user._id} className="transition-colors hover:bg-slate-50/70">
-                          <td className={`${TD} font-medium text-slate-900`}>{user.email}</td>
+                          <td className={`${TD} font-medium text-slate-900`}>
+                            <span className="block max-w-[18rem] wrap-anywhere">{user.email}</span>
+                          </td>
                           <td className={TD}>
                             <span
                               className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
