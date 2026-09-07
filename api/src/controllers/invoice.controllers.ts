@@ -1,13 +1,23 @@
 import { Request, Response } from 'express';
 import { Invoice } from '../models/Invoice.js';
-
+import { Booking } from '../models/Booking.js';
+import { UserRole } from '../models/User.js';
 
 export const downloadInvoice = async (req: Request, res: Response) => {
   try {
     const { bookingId } = req.params;
 
-    const invoice = await Invoice.findOne({ id_booking: bookingId });
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: 'Réservation introuvable' });
+    }
+    const isOwner = booking.id_voyageur.toString() === req.user?._id.toString();
+    const isAdmin = req.user?.role === UserRole.ADMIN;
 
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: 'Accès refusé à cette facture' });
+    }
+    const invoice = await Invoice.findOne({ id_booking: bookingId });
     if (!invoice || !invoice.pdf_data) {
       return res.status(404).json({ message: 'Facture introuvable' });
     }

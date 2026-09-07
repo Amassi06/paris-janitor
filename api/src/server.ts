@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import {fileURLToPath} from 'node:url';
 
 
 import { connectDB } from './config/db.js';
@@ -19,8 +20,7 @@ const app = express();
 dotenv.config();
 
 // Middlewares
-app.use(cors());
-app.post('/api/webhooks/stripe',express.raw({type:'application/json'}),handleStripeWebhook);
+app.use(cors({ origin: [ENV.CLIENT_URL, ENV.ADMIN_URL], credentials: true }));app.post('/api/webhooks/stripe',express.raw({type:'application/json'}),handleStripeWebhook);
 app.use(express.json());
 
 app.use('/api/auth',authRoutes)
@@ -28,6 +28,13 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments',paymentRoutes);
 app.use('/api/invoices', invoiceRoutes);
+
+//Swagger
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const swaggerPath = path.join(__dirname, "swagger", "swagger-output.json");
+const swaggerDocument = JSON.parse(fs.readFileSync(swaggerPath, "utf-8"));
 const swaggerFile = JSON.parse(
   fs.readFileSync(path.resolve('./src/swagger/swagger-output.json'), 'utf-8')
 );

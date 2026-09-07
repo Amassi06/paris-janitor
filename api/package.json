@@ -5,9 +5,8 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "swagger": "tsx src/swagger/swagger.ts",
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && mkdir -p dist/swagger && cp src/swagger/swagger-output.json dist/swagger/",
     "start": "node dist/server.js"
   },
   "keywords": [],

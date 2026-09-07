@@ -35,7 +35,7 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
 
 export const getMyBookings = async (req: Request, res: Response): Promise<void> => {
   try {
-    const bookings = await Booking.find({ id_voyageur: req.user!._id }).populate('id_service');
+    const bookings = await Booking.find({ id_voyageur: req.user?._id }).populate('id_service');
     res.json(bookings);
   } catch (error) {
     res.status(500).json({ message: 'Erreur récupération réservations', error });
@@ -47,14 +47,14 @@ export const addReview = async (req: Request, res: Response): Promise<void> => {
     const { note, commentaire } = req.body;
     const bookingId = req.params.id;
 
-    const booking = await Booking.findOne({ _id: bookingId, id_voyageur: req.user!._id });
+    const booking = await Booking.findOne({ _id: bookingId, id_voyageur: req.user?._id });
     
     if (!booking) {
       res.status(404).json({ message: 'Réservation introuvable' });
       return;
     }
     
-    if (booking.statut !== BookingStatus.CONFIRMED) {
+    if (booking.statut !== BookingStatus.COMPLETED) {
       res.status(400).json({ message: 'La prestation doit être terminée pour être évaluée' });
       return;
     }

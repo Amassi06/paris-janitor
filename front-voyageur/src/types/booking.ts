@@ -1,9 +1,10 @@
-export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 
 export const BookingStatus = {
   PENDING: 'PENDING',
   CONFIRMED: 'CONFIRMED',
   CANCELLED: 'CANCELLED',
+  COMPLETED: 'COMPLETED'
 };
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
