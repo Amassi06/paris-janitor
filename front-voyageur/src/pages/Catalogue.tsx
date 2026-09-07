@@ -99,43 +99,54 @@ export default function Catalogue() {
   if (loading) return <div className="p-8 text-center">Chargement des prestations...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-4xl">
-          <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-800">Catalogue des Services</h1>
-        </div>
+  <div className="min-h-screen bg-white">
+  <div className="mx-auto max-w-3xl px-6 py-16">
+    <h1 className="text-2xl font-medium text-neutral-900 mb-10">
+      Catalogue des services
+    </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {services.map((service) => (
-            <div key={service._id} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800">{service.nom}</h2>
-                <p className="text-gray-600 mt-2 text-sm">{service.description}</p>
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date d'intervention</label>
-                  <input
-                    type="datetime-local"
-                    min={getCurrentDateTimeLocal()}
-                    className="w-full border border-gray-300 rounded p-2 text-sm"
-                    value={dates[service._id] || ''}
-                    onChange={(e) => handleDateChange(service._id, e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="mt-6 flex items-center justify-between border-t pt-4">
-                <span className="text-lg font-bold text-gray-900">À partir de {service.prix_base} €</span>
-                <button
-                  onClick={() => handleBook(service._id)}
-                  disabled={bookingId === service._id}
-                  className="bg-gray-900 text-white px-4 py-2 rounded font-medium hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {bookingId === service._id ? 'Réservation...' : 'Réserver'}
-                </button>
-              </div>
+    <div className="divide-y divide-neutral-200">
+      {services.map((service) => (
+        <div key={service._id} className="py-8 first:pt-0">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="text-lg font-medium text-neutral-900">
+              {service.nom}
+            </h2>
+            <span className="text-sm text-neutral-500 whitespace-nowrap">
+              à partir de {service.prix_base} €
+            </span>
+          </div>
+
+          <p className="text-neutral-600 text-sm mt-1.5 max-w-xl">
+            {service.description}
+          </p>
+
+          <div className="mt-5 flex flex-wrap items-end gap-4">
+            <div className="flex-1 min-w-[220px]">
+              <label className="block text-xs text-neutral-500 mb-1.5">
+                Date d'intervention
+              </label>
+              <input
+                type="datetime-local"
+                min={getCurrentDateTimeLocal()}
+                className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none transition-colors"
+                value={dates[service._id] || ''}
+                onChange={(e) => handleDateChange(service._id, e.target.value)}
+              />
             </div>
-          ))}
+
+            <button
+              onClick={() => handleBook(service._id)}
+              disabled={bookingId === service._id}
+              className="cursor-pointer text-sm font-medium text-white bg-neutral-900 px-5 py-2 rounded-sm hover:bg-neutral-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {bookingId === service._id ? 'Réservation…' : 'Réserver'}
+            </button>
+          </div>
         </div>
-      </div>
+      ))}
     </div>
+  </div>
+</div>
   );
 }

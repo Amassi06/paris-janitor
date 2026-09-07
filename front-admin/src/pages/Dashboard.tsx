@@ -175,6 +175,8 @@ useEffect(() => {
                       <th className="px-6 py-4">Date</th>
                       <th className="px-6 py-4">Prix</th>
                       <th className="px-6 py-4">Statut</th>
+                      <th className="px-6 py-4">Note</th>
+                      <th className="px-6 py-4">Commentaire</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -189,6 +191,9 @@ useEffect(() => {
                             {resa.statut}
                           </span>
                         </td>
+                        <td className="px-6 py-4 text-gray-600">{resa.note || 'N/A'}</td>
+                        <td className="px-6 py-4 text-gray-600">{resa.commentaire || 'N/A'}</td>
+
                       </tr>
                     ))}
                   </tbody>

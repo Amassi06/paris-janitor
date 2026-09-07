@@ -190,7 +190,7 @@ const handleReview = async (bookingId: string) => {
                   <button
                     type="button"
                     onClick={() => handlePay(booking._id)}
-                    className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+                    className="cursor-pointer rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
                   >
                     Payer
                   </button>
@@ -200,7 +200,7 @@ const handleReview = async (bookingId: string) => {
                   <button
                     type="button"
                     onClick={() => handleViewInvoice(booking._id)}
-                    className="rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition text-center flex items-center"
+                    className="cursor-pointer rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition text-center flex items-center"
                   >
                     Voir la facture
                   </button>
@@ -209,7 +209,7 @@ const handleReview = async (bookingId: string) => {
                 {booking.statut === BookingStatus.CONFIRMED && !booking.note && (
                   <button
                     onClick={() => handleReview(booking._id)}
-                    className="rounded bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600 transition"
+                    className="cursor-pointer rounded bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600 transition"
                   >
                     Évaluer
                   </button>
