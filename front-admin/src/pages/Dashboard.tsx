@@ -111,8 +111,22 @@ useEffect(() => {
       if (res.ok) {
         setServices(services.filter(s => s._id !== id));
       }
-    } catch (error) { console.error('Erreur suppression', error); }
+    } catch (error) { console.error('Erreur suppression service', error); }
   };
+
+  const handleBanUser = async (id:string) => {
+    if (!window.confirm('Bannir cet utilisateur définitivement ?')) return;
+    try{
+        const res = await fetch(`${API_URL}/api/auth/users/${id}`,{
+            method:'DELETE',
+            headers:{'Authorization':`Bearer ${token}` }
+        });
+        if (res.ok){
+            setUsers(users.filter(u=>u._id!==id));
+        }
+    }
+    catch (error) { console.error('Erreur lors suppression utilisateur',error)};
+}
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans">
@@ -278,7 +292,9 @@ useEffect(() => {
                 </td>
                 <td className="px-6 py-4 text-gray-500">{user.subscription}</td>
                 <td className="px-6 py-4">
-                  <button className="text-red-600 hover:text-red-800 font-medium text-sm transition">
+                  <button className="text-red-600 hover:text-red-800 font-medium text-sm transition"
+                  onClick={()=>handleBanUser(user._id)}
+                  >
                     Bannir
                   </button>
                 </td>

@@ -108,3 +108,16 @@ export const getAllUsers = async (re:Request, res:Response):Promise<void> =>{
     res.status(500).json({message:'Erreur lors de la récupération des utilisateurs',error});
   }
 };
+
+export const bannUser = async (req: Request, res: Response):Promise<void> =>{
+  try{
+    const deleteUser = await User.findByIdAndDelete(req.params.id);
+    if(!deleteUser){
+      res.status(404).json({ message: "Utilisateur introuvable ou déjà supprimé."});
+      return;
+    }
+    res.status(200).json({ message: "Utilisateur banni avec succès." });
+  }catch(error){
+        res.status(500).json({message:`Erreur lors de la suppression de utilisateur id: ${req.params.id}`,error});
+  }
+}
