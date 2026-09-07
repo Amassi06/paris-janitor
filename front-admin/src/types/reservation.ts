@@ -10,7 +10,7 @@ export interface ReservationDTO {
     prix_base: number;
   } | null;
   date_prestation: string;
-  statut: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+  statut: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
   prix_final: number;
   note?: number;
   commentaire?: string;

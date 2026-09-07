@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Booking, BookingStatus } from '../models/Booking.js';
 import { Service } from '../models/Service.js';
-import { SubscriptionType } from '../models/User.js';
+import { SubscriptionType, UserRole } from '../models/User.js';
 
 export const createBooking = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -66,6 +66,61 @@ export const addReview = async (req: Request, res: Response): Promise<void> => {
     res.json(booking);
   } catch (error) {
     res.status(500).json({ message: 'Erreur ajout évaluation', error });
+  }
+};
+
+export const updateBookingStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { statut } = req.body;
+    const user = req.user!;
+
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      res.status(404).json({ message: 'Réservation introuvable' });
+      return;
+    }
+
+    const isAdmin = user.role === UserRole.ADMIN;
+    const isOwner = booking.id_voyageur.toString() === user._id!.toString();
+
+    if (!isAdmin && !isOwner) {
+      res.status(403).json({ message: 'Accès refusé à cette réservation' });
+      return;
+    }
+
+    if (statut === BookingStatus.CANCELLED) {
+      if (booking.statut === BookingStatus.COMPLETED) {
+        res.status(400).json({ message: 'Une prestation déjà réalisée ne peut pas être annulée' });
+        return;
+      }
+      if (booking.statut === BookingStatus.CANCELLED) {
+        res.status(400).json({ message: 'Réservation déjà annulée' });
+        return;
+      }
+
+      if (!isAdmin && booking.statut !== BookingStatus.PENDING) {
+        res.status(400).json({ message: 'Réservation déjà payée : contactez le service client' });
+        return;
+      }
+    } else if (statut === BookingStatus.COMPLETED) {
+      if (!isAdmin) {
+        res.status(403).json({ message: 'Seul un administrateur peut clôturer une prestation' });
+        return;
+      }
+      if (booking.statut !== BookingStatus.CONFIRMED) {
+        res.status(400).json({ message: 'Seule une réservation payée peut être marquée réalisée' });
+        return;
+      }
+    } else {
+      res.status(400).json({ message: 'Statut invalide ou transition non autorisée' });
+      return;
+    }
+
+    booking.statut = statut;
+    await booking.save();
+    res.json(booking);
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors de la mise à jour du statut', error });
   }
 };
 

@@ -6,6 +6,20 @@ import type { ServiceDTO } from '../types/service';
 import type { UserDTO } from '../types/user';
 
 
+const STATUT_STYLE: Record<string, string> = {
+  PENDING: 'bg-orange-100 text-orange-700',
+  CONFIRMED: 'bg-green-100 text-green-700',
+  COMPLETED: 'bg-blue-100 text-blue-700',
+  CANCELLED: 'bg-red-100 text-red-700',
+};
+
+const STATUT_LABEL: Record<string, string> = {
+  PENDING: 'En attente',
+  CONFIRMED: 'Payée',
+  COMPLETED: 'Réalisée',
+  CANCELLED: 'Annulée',
+};
+
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'reservations' | 'services' | 'utilisateurs'>('reservations');
   const [users, setUsers] = useState<UserDTO[]>([]);
@@ -28,7 +42,6 @@ export default function Dashboard() {
   };
 
 useEffect(() => {
-    // A. Déclaration des requêtes internes au useEffect
     const fetchReservations = async () => {
       try {
         const res = await fetch(`${API_URL}/api/bookings`, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -53,7 +66,6 @@ useEffect(() => {
       finally { setLoadingUsers(false); }
     };
 
-    // B. Exécution conditionnelle
     if (activeTab === 'reservations') fetchReservations();
     if (activeTab === 'services') fetchServices();
     if (activeTab === 'utilisateurs') fetchUsers();
@@ -76,7 +88,6 @@ useEffect(() => {
     } catch (error) { console.error('Erreur création', error); }
   };
 
-  // Action : Modifier un service
   const handleUpdateService = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingService) return;
@@ -128,6 +139,28 @@ useEffect(() => {
     catch (error) { console.error('Erreur lors suppression utilisateur',error)};
 }
 
+  const handleUpdateStatus = async (id: string, statut: 'COMPLETED' | 'CANCELLED') => {
+    const action = statut === 'COMPLETED'
+      ? 'marquer cette prestation comme réalisée'
+      : 'annuler cette réservation';
+    if (!window.confirm(`Confirmer : ${action} ?`)) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/bookings/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ statut })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erreur lors du changement de statut');
+
+      setReservations(reservations.map(r => (r._id === id ? { ...r, statut: data.statut } : r)));
+    } catch (error) {
+      console.error('Erreur changement de statut', error);
+      alert(error instanceof Error ? error.message : 'Erreur réseau');
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-50 font-sans">
       <aside className="w-64 bg-gray-900 text-white flex flex-col">
@@ -177,6 +210,7 @@ useEffect(() => {
                       <th className="px-6 py-4">Statut</th>
                       <th className="px-6 py-4">Note</th>
                       <th className="px-6 py-4">Commentaire</th>
+                      <th className="px-6 py-4">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -187,13 +221,32 @@ useEffect(() => {
                         <td className="px-6 py-4 text-gray-500">{new Date(resa.date_prestation).toLocaleDateString('fr-FR')}</td>
                         <td className="px-6 py-4 font-bold text-gray-900">{resa.prix_final} €</td>
                         <td className="px-6 py-4">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${resa.statut === 'CONFIRMED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                            {resa.statut}
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${STATUT_STYLE[resa.statut]}`}>
+                            {STATUT_LABEL[resa.statut]}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-gray-600">{resa.note || 'N/A'}</td>
                         <td className="px-6 py-4 text-gray-600">{resa.commentaire || 'N/A'}</td>
-
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            {resa.statut === 'CONFIRMED' && (
+                              <button
+                                onClick={() => handleUpdateStatus(resa._id, 'COMPLETED')}
+                                className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-blue-700 transition"
+                              >
+                                Marquer réalisée
+                              </button>
+                            )}
+                            {(resa.statut === 'PENDING' || resa.statut === 'CONFIRMED') && (
+                              <button
+                                onClick={() => handleUpdateStatus(resa._id, 'CANCELLED')}
+                                className="bg-white text-red-600 border border-red-200 px-3 py-1.5 rounded text-xs font-medium hover:bg-red-50 transition"
+                              >
+                                Annuler
+                              </button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
