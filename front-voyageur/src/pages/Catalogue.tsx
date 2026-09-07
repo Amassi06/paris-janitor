@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { IService } from '../types/booking';
+import { type IService,API_URL } from '../types/booking';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const getCurrentDateTimeLocal = () => {
   const now = new Date();

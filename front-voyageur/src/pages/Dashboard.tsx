@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import  {BookingStatus,type IBooking } from '../types/booking';
-
+import  {BookingStatus,type IBooking,API_URL } from '../types/booking';
 export default function Dashboard() {
   const [bookings, setBookings] = useState<IBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +18,7 @@ export default function Dashboard() {
       }
 
       try {
-        const res = await fetch('http://localhost:3000/api/bookings/me', {
+        const res = await fetch(`${API_URL}/api/bookings/me`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -60,7 +59,7 @@ export default function Dashboard() {
       return;
     }
 
-    const res = await fetch(`http://localhost:3000/api/payments/${bookingId}/checkout`, {
+    const res = await fetch(`${API_URL}/api/payments/${bookingId}/checkout`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -96,7 +95,7 @@ const handleReview = async (bookingId: string) => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:3000/api/bookings/${bookingId}/review`, {
+      const res = await fetch(`${API_URL}/api/bookings/${bookingId}/review`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -174,7 +173,7 @@ const handleReview = async (bookingId: string) => {
                 
                 {(booking.statut === BookingStatus.CONFIRMED ) && (
                   <a
-                    href={`http://localhost:3000/invoices/INV-${booking._id}.pdf`}
+                    href={`${API_URL}/invoices/INV-${booking._id}.pdf`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition text-center flex items-center"

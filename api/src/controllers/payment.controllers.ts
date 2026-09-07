@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { Booking, BookingStatus} from '../models/Booking.js';
 import { User, SubscriptionType,IUser } from '../models/User.js';
 import { generateInvoicePDF } from '../services/invoice.service.js';
+import { ENV } from '../config/env.js';
 
 const PLANS: Record<string, { name: string; amount: number; subscriptionType: SubscriptionType }> = {
   bag_packer: {
@@ -53,8 +54,8 @@ export const createCheckoutSession = async (req: Request, res: Response): Promis
       ],
       mode: 'payment',
       customer_email: userEmail,
-      success_url: `http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `http://localhost:5173/cancel`,
+      success_url: `${ENV.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${ENV.CLIENT_URL}/cancel`,
       metadata: {
         type: 'booking',
         bookingId: booking._id.toString(),
@@ -111,8 +112,8 @@ export const createSubscriptionCheckout = async (req: Request, res: Response): P
         userId: userId.toString(),
         plan,
       },
-      success_url: 'http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: 'http://localhost:5173/cancel',
+      success_url: `${ENV.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${ENV.CLIENT_URL}/cancel`,
     });
 
     res.json({ url: session.url });

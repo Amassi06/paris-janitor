@@ -1,4 +1,5 @@
 import swaggerAutogen from 'swagger-autogen';
+import { ENV } from '../config/env.js';
 
 const doc = {
   info: {
@@ -6,7 +7,7 @@ const doc = {
     description: 'Documentation générée automatiquement',
     version: '1.0.0',
   },
-  host: 'localhost:3000', 
+  host: ENV.API_URL, 
   schemes: ['http'],
 };
 

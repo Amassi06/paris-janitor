@@ -12,10 +12,9 @@ import serviceRoutes from './routes/service.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import swaggerUi from 'swagger-ui-express';
-
+import { ENV } from './config/env.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 dotenv.config();
 
 // Middlewares
@@ -44,9 +43,9 @@ const startServer = async () => {
     console.log('Tentative de connexion à MongoDB...');
     await connectDB();
     console.log('Connexion réussie, lancement du serveur...');
-    app.listen(PORT, () => {
-      console.log(`Serveur démarré sur http://localhost:${PORT}`);
-      console.log('Swagger dispo sur http://localhost:3000/api-docs');
+    app.listen(ENV.PORT, () => {
+      console.log(`Serveur démarré sur ${ENV.CLIENT_URL}`);
+      console.log(`Swagger dispo sur ${ENV.API_URL}/api-docs`);
     });
   } catch (error) {
     console.error('Erreur au lancement du serveur :', error);
