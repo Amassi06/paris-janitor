@@ -68,3 +68,15 @@ export const addReview = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: 'Erreur ajout évaluation', error });
   }
 };
+
+export const getAllBookings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const bookings = await Booking.find()
+      .populate('id_voyageur', 'email')
+      .populate('id_service', 'nom prix_base')
+      .sort({ createdAt: -1 });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur récupération des réservations globales', error });
+  }
+};
