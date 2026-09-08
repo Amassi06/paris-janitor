@@ -4,7 +4,7 @@ import type { ReservationDTO } from '../types/reservation';
 import type { ServiceDTO } from '../types/service';
 import type { UserDTO } from '../types/user';
 import type { InvoiceDTO } from '../types/invoice';
-import { CalendarDays, LayoutGrid, Users, LogOut, Star, Receipt } from 'lucide-react';
+import { CalendarDays, LayoutGrid, Users, LogOut, Star, Receipt, Menu, X } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 
 
@@ -30,14 +30,15 @@ const BTN_DARK = `${BTN} bg-slate-900 text-white shadow-sm hover:bg-slate-800`;
 const BTN_BRAND = `${BTN} bg-brand-600 text-white shadow-sm hover:bg-brand-700`;
 const BTN_OUTLINE = `${BTN} bg-white text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50`;
 const BTN_DANGER = `${BTN} bg-white text-red-600 ring-1 ring-inset ring-red-200 hover:bg-red-50`;
-const TH = 'px-6 py-3.5 text-xs font-semibold uppercase tracking-wide text-slate-500';
-const TD = 'px-6 py-4 align-middle';
+const TH = 'px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-slate-500 sm:px-6';
+const TD = 'px-4 py-4 align-middle sm:px-6';
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'reservations' | 'services' | 'utilisateurs' | 'factures'>('reservations');
+  const [menuOpen, setMenuOpen] = useState(false);
   const [invoices, setInvoices] = useState<InvoiceDTO[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
   const [users, setUsers] = useState<UserDTO[]>([]);
@@ -232,8 +233,19 @@ useEffect(() => {
 
   return (
     <div className="flex h-screen bg-slate-50">
-      {/* SIDEBAR ADMIN */}
-      <aside className="flex w-64 shrink-0 flex-col bg-slate-900 text-white">
+      {menuOpen && (
+        <div
+          onClick={() => setMenuOpen(false)}
+          aria-hidden="true"
+          className="fixed inset-0 z-40 bg-slate-900/60 lg:hidden"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col bg-slate-900 text-white transition-transform duration-200 ease-out lg:static lg:translate-x-0 ${
+          menuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <div className="px-5 py-6">
           <div className="flex items-center gap-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-sm font-bold ring-1 ring-inset ring-white/15">
@@ -246,16 +258,26 @@ useEffect(() => {
                 Administration
               </p>
             </div>
+            <button
+              onClick={() => setMenuOpen(false)}
+              aria-label="Fermer le menu"
+              className="ml-auto -mr-1 flex h-9 w-9 items-center justify-center rounded-control text-slate-400 transition-colors hover:bg-white/10 hover:text-white lg:hidden"
+            >
+              <X className="h-5 w-5" strokeWidth={1.75} />
+            </button>
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setMenuOpen(false);
+                }}
                 aria-current={isActive ? 'page' : undefined}
                 className={`group relative flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                   isActive ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
@@ -284,8 +306,26 @@ useEffect(() => {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-8 py-10">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
+          <button
+            onClick={() => setMenuOpen(true)}
+            aria-label="Ouvrir le menu"
+            aria-expanded={menuOpen}
+            className="-ml-1 flex h-10 w-10 items-center justify-center rounded-control text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+          >
+            <Menu className="h-5 w-5" strokeWidth={1.75} />
+          </button>
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-sm font-bold text-white">
+            PJ
+          </span>
+          <p className="text-sm font-semibold tracking-tight text-slate-900">
+            {tabs.find((t) => t.id === activeTab)?.label ?? 'Administration'}
+          </p>
+        </header>
+
+        <main className="min-w-0 flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-10">
 
           {/* ---------------- RÉSERVATIONS ---------------- */}
           {activeTab === 'reservations' && (
@@ -470,8 +510,8 @@ useEffect(() => {
                       />
                       Réservé VIP
                     </label>
-                    <div className="flex gap-2">
-                      <button type="submit" className={BTN_BRAND}>Enregistrer</button>
+                    <div className="flex w-full gap-2 sm:w-auto">
+                      <button type="submit" className={`${BTN_BRAND} flex-1 sm:flex-none`}>Enregistrer</button>
                       <button type="button" onClick={() => setEditingService(null)} className={BTN_OUTLINE}>
                         Annuler
                       </button>
@@ -479,7 +519,7 @@ useEffect(() => {
                   </div>
                 </form>
               ) : (
-                <form onSubmit={handleCreateService} className={`${CARD} mb-8 p-6`}>
+                <form onSubmit={handleCreateService} className={`${CARD} mb-8 p-4 sm:p-6`}>
                   <h2 className="mb-4 text-sm font-semibold text-slate-900">Ajouter une prestation</h2>
                   <div className="flex flex-wrap items-end gap-4">
                     <div className="min-w-[12rem] flex-1">
@@ -524,7 +564,7 @@ useEffect(() => {
                       />
                       Réservé VIP
                     </label>
-                    <button type="submit" className={BTN_DARK}>Ajouter</button>
+                    <button type="submit" className={`${BTN_DARK} w-full sm:w-auto`}>Ajouter</button>
                   </div>
                 </form>
               )}
@@ -547,7 +587,7 @@ useEffect(() => {
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {services.map((service) => (
-                    <div key={service._id} className={`${CARD} flex flex-col p-6`}>
+                    <div key={service._id} className={`${CARD} flex flex-col p-4 sm:p-6`}>
                       <div className="flex-1">
                         <div className="flex items-start justify-between gap-3">
                           <h3 className="text-base font-semibold tracking-tight text-slate-900">
@@ -764,8 +804,9 @@ useEffect(() => {
               )}
             </>
           )}
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
