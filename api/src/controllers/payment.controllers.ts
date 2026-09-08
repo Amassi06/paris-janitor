@@ -147,7 +147,7 @@ export const createSubscriptionCheckout = async (req: Request, res: Response): P
     });
 
     res.json({ url: session.url });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Erreur Checkout Abonnement:', error);
     res.status(500).json({ message: "Erreur lors de la création de l'abonnement" });
   }
@@ -167,9 +167,10 @@ export const handleStripeWebhook = async (req: Request, res: Response): Promise<
   try {
     const stripe = getStripe();
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err: any) {
-    console.error('Erreur de signature Webhook :', err.message);
-    res.status(400).send(`Webhook Error: ${err.message}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Erreur inconnue';
+    console.error('Erreur de signature Webhook :', message);
+    res.status(400).send(`Webhook Error: ${message}`);
     return;
   }
 
