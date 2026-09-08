@@ -47,7 +47,7 @@ export default function Dashboard() {
   const [services, setServices] = useState<ServiceDTO[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
   
-  const [newService, setNewService] = useState({ nom: '', description: '', prix_base: 0 });
+  const [newService, setNewService] = useState({ nom: '', description: '', prix_base: 0, vip_only: false });
   const [editingService, setEditingService] = useState<ServiceDTO | null>(null);
   const token = localStorage.getItem('token');
 
@@ -98,7 +98,7 @@ useEffect(() => {
       if (res.ok) {
         const created = await res.json();
         setServices([...services, created]);
-        setNewService({ nom: '', description: '', prix_base: 0 }); 
+        setNewService({ nom: '', description: '', prix_base: 0, vip_only: false }); 
       }
     } catch (error) { console.error('Erreur création', error); }
   };
@@ -115,7 +115,8 @@ useEffect(() => {
           nom: editingService.nom,
           description: editingService.description,
           prix_base: editingService.prix_base,
-          actif: editingService.actif
+          actif: editingService.actif,
+          vip_only: editingService.vip_only
         })
       });
 
@@ -413,6 +414,15 @@ useEffect(() => {
                         className={INPUT}
                       />
                     </div>
+                    <label className="flex items-center gap-2 pb-2 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={editingService.vip_only}
+                        onChange={(e) => setEditingService({ ...editingService, vip_only: e.target.checked })}
+                        className="h-4 w-4 rounded border-slate-300 accent-brand-600"
+                      />
+                      Réservé VIP
+                    </label>
                     <div className="flex gap-2">
                       <button type="submit" className={BTN_BRAND}>Enregistrer</button>
                       <button type="button" onClick={() => setEditingService(null)} className={BTN_OUTLINE}>
@@ -458,6 +468,15 @@ useEffect(() => {
                         className={INPUT}
                       />
                     </div>
+                    <label className="flex items-center gap-2 pb-2 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={newService.vip_only}
+                        onChange={(e) => setNewService({ ...newService, vip_only: e.target.checked })}
+                        className="h-4 w-4 rounded border-slate-300 accent-brand-600"
+                      />
+                      Réservé VIP
+                    </label>
                     <button type="submit" className={BTN_DARK}>Ajouter</button>
                   </div>
                 </form>
@@ -484,7 +503,14 @@ useEffect(() => {
                     <div key={service._id} className={`${CARD} flex flex-col p-6`}>
                       <div className="flex-1">
                         <div className="flex items-start justify-between gap-3">
-                          <h3 className="text-base font-semibold tracking-tight text-slate-900">{service.nom}</h3>
+                          <h3 className="text-base font-semibold tracking-tight text-slate-900">
+                            {service.nom}
+                            {service.vip_only && (
+                              <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 align-middle text-[11px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                                VIP
+                              </span>
+                            )}
+                          </h3>
                           <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-slate-700">
                             {service.prix_base} €
                           </span>

@@ -5,6 +5,7 @@ export interface IService extends Document {
   description: string;
   prix_base: number;
   actif: boolean;
+  vip_only: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,6 +29,10 @@ const serviceSchema = new Schema<IService>(
     actif: {
       type: Boolean,
       default: true,
+    },
+    vip_only: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

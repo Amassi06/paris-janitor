@@ -6,6 +6,11 @@ export enum UserRole {
   VOYAGEUR = 'VOYAGEUR',
 }
 
+export enum SubscriptionInterval {
+  MONTH = 'MONTH',
+  YEAR = 'YEAR',
+}
+
 export enum SubscriptionType {
   FREE = 'FREE',
   BAG_PACKER = 'BAG_PACKER',
@@ -17,6 +22,10 @@ export interface IUser extends mongoose.Document {
   password: string;
   role: UserRole;
   subscription: SubscriptionType;
+  subscription_interval?: SubscriptionInterval;
+  subscription_end?: Date;
+  renewal_count: number;
+  free_services: { id_booking: mongoose.Types.ObjectId; date: Date }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,6 +53,25 @@ const userSchema = new mongoose.Schema<IUser>(
       enum: Object.values(SubscriptionType),
       default: SubscriptionType.FREE,
     },
+    subscription_interval: {
+      type: String,
+      enum: Object.values(SubscriptionInterval),
+      required: false,
+    },
+    subscription_end: {
+      type: Date,
+      required: false,
+    },
+    renewal_count: {
+      type: Number,
+      default: 0,
+    },
+    free_services: [
+      {
+        id_booking: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' },
+        date: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User, UserRole, SubscriptionType } from '../models/User.js';
+import { offreDisponible } from '../services/pricing.service.js';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -18,7 +19,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Hachage du mot de passe
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -59,7 +59,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Vérification du mot de passe hashé
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       res.status(401).json({ message: 'Identifiants invalides' });
@@ -72,7 +71,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Génération du JWT (valable 1 jours)
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       jwtSecret,
@@ -96,8 +94,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const getMe = async (req: Request, res: Response): Promise<void> => {
-  // req.user est injecté par le middleware authenticate
-  res.json({ user: req.user });
+  const user = req.user!;
+  res.json({ user, offre_disponible: offreDisponible(user) });
 };
 
 export const getAllUsers = async (re:Request, res:Response):Promise<void> =>{

@@ -1,22 +1,46 @@
 import {Request, Response} from 'express';
 import Stripe from 'stripe';
 import { Booking, BookingStatus} from '../models/Booking.js';
-import { User, SubscriptionType,IUser } from '../models/User.js';
+import { User, SubscriptionType, SubscriptionInterval, IUser } from '../models/User.js';
 import { generateInvoicePDF } from '../services/invoice.service.js';
 import { ENV } from '../config/env.js';
 
-const PLANS: Record<string, { name: string; amount: number; subscriptionType: SubscriptionType }> = {
-  bag_packer: {
-    name: 'Abonnement Bag Packer',
-    amount: 990, 
+const PLANS: Record<
+  string,
+  { name: string; amount: number; interval: 'month' | 'year'; subscriptionType: SubscriptionType }
+> = {
+  bag_packer_month: {
+    name: 'Abonnement Bag Packer (mensuel)',
+    amount: 990,
+    interval: 'month',
     subscriptionType: SubscriptionType.BAG_PACKER,
   },
-  explorator: {
-    name: 'Abonnement Explorator',
-    amount: 1900, 
+  bag_packer_year: {
+    name: 'Abonnement Bag Packer (annuel)',
+    amount: 11300,
+    interval: 'year',
+    subscriptionType: SubscriptionType.BAG_PACKER,
+  },
+  explorator_month: {
+    name: 'Abonnement Explorator (mensuel)',
+    amount: 1900,
+    interval: 'month',
+    subscriptionType: SubscriptionType.EXPLORATOR,
+  },
+  explorator_year: {
+    name: 'Abonnement Explorator (annuel)',
+    amount: 22000,
+    interval: 'year',
     subscriptionType: SubscriptionType.EXPLORATOR,
   },
 };
+
+const BONUS_RENOUVELLEMENT = 0.1;
+
+const aDroitAuBonus = (user: IUser | null, planKey: string): boolean =>
+  planKey === 'explorator_year' &&
+  user?.subscription === SubscriptionType.EXPLORATOR &&
+  (user?.renewal_count ?? 0) > 0;
 
 const getStripe = (): Stripe => {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -88,6 +112,12 @@ export const createSubscriptionCheckout = async (req: Request, res: Response): P
     const stripe = getStripe();
     const user_ = await User.findById(userId);
     const userEmail = user_?.email;
+
+    const bonus = aDroitAuBonus(user_, plan);
+    const montant = bonus
+      ? Math.round(selectedPlan.amount * (1 - BONUS_RENOUVELLEMENT))
+      : selectedPlan.amount;
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer_email: userEmail,
@@ -97,11 +127,11 @@ export const createSubscriptionCheckout = async (req: Request, res: Response): P
           price_data: {
             currency: 'eur',
             product_data: {
-              name: selectedPlan.name,
+              name: bonus ? `${selectedPlan.name} - renouvellement -10%` : selectedPlan.name,
             },
-            unit_amount: selectedPlan.amount,
+            unit_amount: montant,
             recurring: {
-              interval: 'month',
+              interval: selectedPlan.interval,
             },
           },
           quantity: 1,
@@ -178,7 +208,22 @@ export const handleStripeWebhook = async (req: Request, res: Response): Promise<
 
       if (userId && selectedPlan) {
         try {
-          await User.findByIdAndUpdate(userId, { subscription: selectedPlan.subscriptionType });
+          const fin = new Date();
+          if (selectedPlan.interval === 'year') {
+            fin.setFullYear(fin.getFullYear() + 1);
+          } else {
+            fin.setMonth(fin.getMonth() + 1);
+          }
+
+          await User.findByIdAndUpdate(userId, {
+            subscription: selectedPlan.subscriptionType,
+            subscription_interval:
+              selectedPlan.interval === 'year'
+                ? SubscriptionInterval.YEAR
+                : SubscriptionInterval.MONTH,
+            subscription_end: fin,
+            $inc: { renewal_count: 1 },
+          });
           console.log(`Abonnement ${plan} activé pour l'utilisateur ${userId}.`);
         } catch (error) {
           console.error("Erreur lors de la mise à jour de l'abonnement :", error);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { type IService,API_URL } from '../types/booking';
+import { type IService, type IProfile, API_URL } from '../types/booking';
+import { Sparkles } from 'lucide-react';
 
 
 const getCurrentDateTimeLocal = () => {
@@ -13,6 +14,8 @@ export default function Catalogue() {
   const [loading, setLoading] = useState(true);
   const [dates, setDates] = useState<{ [key: string]: string }>({});
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<IProfile | null>(null);
+  const [offreDisponible, setOffreDisponible] = useState(false);
 
   const navigate = useNavigate();
 
@@ -43,8 +46,40 @@ export default function Catalogue() {
         setLoading(false);
       }
     };
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data.user);
+        setOffreDisponible(data.offre_disponible);
+      }
+    };
+
     fetchServices();
+    fetchProfile().catch(() => setProfile(null));
   }, [navigate]);
+
+  const prixAffiche = (service: IService) => {
+    const plafond =
+      profile?.subscription === 'EXPLORATOR' ? Infinity : profile?.subscription === 'BAG_PACKER' ? 80 : 0;
+
+    if (offreDisponible && service.prix_base <= plafond) {
+      return { prix: 0, prixBarre: service.prix_base, offerte: true };
+    }
+
+    if (profile?.subscription === 'EXPLORATOR') {
+      return {
+        prix: Math.round(service.prix_base * 0.95 * 100) / 100,
+        prixBarre: service.prix_base,
+        offerte: false,
+      };
+    }
+
+    return { prix: service.prix_base, prixBarre: null, offerte: false };
+  };
 
   const handleDateChange = (serviceId: string, value: string) => {
     setDates(prev => ({ ...prev, [serviceId]: value }));
@@ -132,10 +167,35 @@ export default function Catalogue() {
                 className="flex flex-col rounded-card border border-slate-200 bg-white p-6 shadow-card transition-shadow hover:shadow-raised"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <h2 className="text-base font-semibold tracking-tight text-slate-900">{service.nom}</h2>
-                  <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-slate-700">
-                    {service.prix_base} €
-                  </span>
+                  <h2 className="text-base font-semibold tracking-tight text-slate-900">
+                    {service.nom}
+                    {service.vip_only && (
+                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 align-middle text-[11px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                        <Sparkles className="h-3 w-3" strokeWidth={2} />
+                        VIP
+                      </span>
+                    )}
+                  </h2>
+
+                  {(() => {
+                    const { prix, prixBarre, offerte } = prixAffiche(service);
+                    return (
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        {prixBarre !== null && (
+                          <span className="text-xs tabular-nums text-slate-400 line-through">{prixBarre} €</span>
+                        )}
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${
+                            offerte
+                              ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {offerte ? 'Offerte' : `${prix} €`}
+                        </span>
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500">{service.description}</p>

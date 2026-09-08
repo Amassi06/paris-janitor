@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { Booking, BookingStatus } from '../models/Booking.js';
 import { Service } from '../models/Service.js';
-import { SubscriptionType, UserRole } from '../models/User.js';
+import { User, SubscriptionType, UserRole } from '../models/User.js';
+import { computeBookingPrice } from '../services/pricing.service.js';
+import { generateInvoicePDF } from '../services/invoice.service.js';
 
 export const createBooking = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -14,18 +16,27 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    let prix_calcule = service.prix_base;
-    if (user.subscription === SubscriptionType.EXPLORATOR) {
-      prix_calcule = prix_calcule * 0.95; // -5% de réduction
+    if (service.vip_only && user.subscription !== SubscriptionType.EXPLORATOR) {
+      res.status(403).json({ message: 'Prestation réservée aux abonnés Explorator' });
+      return;
     }
+
+    const { prix_final, offerte } = computeBookingPrice(user, service);
 
     const booking = await Booking.create({
       id_voyageur: user._id,
       id_service: service._id,
       date_prestation,
-      prix_final: prix_calcule,
-      statut: BookingStatus.PENDING 
+      prix_final,
+      statut: offerte ? BookingStatus.CONFIRMED : BookingStatus.PENDING,
     });
+
+    if (offerte) {
+      await User.findByIdAndUpdate(user._id, {
+        $push: { free_services: { id_booking: booking._id, date: new Date() } },
+      });
+      await generateInvoicePDF(booking);
+    }
 
     res.status(201).json(booking);
   } catch (error) {

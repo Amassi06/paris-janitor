@@ -25,4 +25,14 @@ export interface IService {
   nom: string;
   description: string;
   prix_base: number;
+  vip_only: boolean;
+}
+
+export type SubscriptionType = 'FREE' | 'BAG_PACKER' | 'EXPLORATOR';
+
+export interface IProfile {
+  subscription: SubscriptionType;
+  subscription_interval?: 'MONTH' | 'YEAR';
+  subscription_end?: string;
+  renewal_count: number;
 }

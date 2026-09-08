@@ -1,12 +1,66 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL } from '../types/booking';
+import { API_URL, type IProfile, type SubscriptionType } from '../types/booking';
 import { Check, Minus } from 'lucide-react';
+
+type Interval = 'MONTH' | 'YEAR';
+
+const FORMULES = [
+  {
+    type: 'FREE' as SubscriptionType,
+    nom: 'Free',
+    accroche: 'Pour découvrir la plateforme',
+    prix: { MONTH: 0, YEAR: 0 },
+    cle: null,
+    avantages: [
+      { ok: false, texte: 'Navigation sans publicité' },
+      { ok: true, texte: 'Commenter, publier des avis' },
+      { ok: false, texte: 'Réduction permanente de 5 %' },
+      { ok: false, texte: 'Prestations offertes' },
+      { ok: false, texte: 'Accès prioritaire aux prestations VIP' },
+      { ok: false, texte: 'Bonus de renouvellement' },
+    ],
+  },
+  {
+    type: 'BAG_PACKER' as SubscriptionType,
+    nom: 'Bag Packer',
+    accroche: 'Pour les séjours réguliers',
+    prix: { MONTH: 9.9, YEAR: 113 },
+    cle: 'bag_packer',
+    avantages: [
+      { ok: true, texte: 'Navigation sans publicité' },
+      { ok: true, texte: 'Commenter, publier des avis' },
+      { ok: false, texte: 'Réduction permanente de 5 %' },
+      { ok: true, texte: '1 prestation offerte par an (moins de 80 €)' },
+      { ok: false, texte: 'Accès prioritaire aux prestations VIP' },
+      { ok: false, texte: 'Bonus de renouvellement' },
+    ],
+  },
+  {
+    type: 'EXPLORATOR' as SubscriptionType,
+    nom: 'Explorator',
+    accroche: "L'offre la plus complète",
+    prix: { MONTH: 19, YEAR: 220 },
+    cle: 'explorator',
+    avantages: [
+      { ok: true, texte: 'Navigation sans publicité' },
+      { ok: true, texte: 'Commenter, publier des avis' },
+      { ok: true, texte: 'Réduction permanente de 5 %' },
+      { ok: true, texte: '1 prestation offerte par semestre, sans plafond' },
+      { ok: true, texte: 'Accès prioritaire aux prestations VIP' },
+      { ok: true, texte: '-10 % au renouvellement annuel' },
+    ],
+  },
+];
+
+const formatPrix = (montant: number) =>
+  montant.toLocaleString('fr-FR', { minimumFractionDigits: montant % 1 === 0 ? 0 : 2 });
 
 export default function Vip() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [currentPlan, setCurrentPlan] = useState<string>('FREE');
+  const [profile, setProfile] = useState<IProfile | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [interval, setInterval] = useState<Interval>('MONTH');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,14 +73,12 @@ export default function Vip() {
 
       try {
         const res = await fetch(`${API_URL}/api/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         if (res.ok) {
           const data = await res.json();
-          setCurrentPlan(data.user.subscription);
+          setProfile(data.user);
         }
       } catch (err) {
         console.error('Erreur lors de la récupération du profil', err);
@@ -38,37 +90,42 @@ export default function Vip() {
     fetchUserPlan();
   }, [navigate]);
 
-  const handleSubscribe = async (planType: string) => {
+  const handleSubscribe = async (cle: string) => {
     const token = localStorage.getItem('token');
     if (!token) return navigate('/login');
 
-    setLoadingPlan(planType);
+    const plan = `${cle}_${interval.toLowerCase()}`;
+    setLoadingPlan(plan);
 
     try {
       const res = await fetch(`${API_URL}/api/payments/subscription/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan: planType })
+        body: JSON.stringify({ plan }),
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.message || 'Erreur lors de la souscription');
       if (data.url) window.location.assign(data.url);
-      
     } catch (err) {
       console.error(err);
-      alert('Impossible d’initier l’abonnement.');
+      alert("Impossible d'initier l'abonnement.");
     } finally {
       setLoadingPlan(null);
     }
   };
 
-  const BTN = 'inline-flex w-full items-center justify-center rounded-control px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed';
+  const currentPlan = profile?.subscription ?? 'FREE';
 
+  // Annexe 2 : -10 % au renouvellement, uniquement Explorator et uniquement en annuel.
+  const bonusRenouvellement =
+    currentPlan === 'EXPLORATOR' && interval === 'YEAR' && (profile?.renewal_count ?? 0) > 0;
+
+  const BTN =
+    'inline-flex w-full items-center justify-center rounded-control px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed';
 
   if (loadingUser) {
     return (
@@ -79,11 +136,7 @@ export default function Vip() {
               <div key={i} className="animate-pulse rounded-card border border-slate-200 bg-white p-6 shadow-card">
                 <div className="h-4 w-24 rounded-full bg-slate-200" />
                 <div className="mt-5 h-8 w-32 rounded-full bg-slate-100" />
-                <div className="mt-8 space-y-3">
-                  <div className="h-3 w-full rounded-full bg-slate-100" />
-                  <div className="h-3 w-4/5 rounded-full bg-slate-100" />
-                </div>
-                <div className="mt-8 h-10 w-full rounded-control bg-slate-100" />
+                <div className="mt-8 h-40 rounded-control bg-slate-100" />
               </div>
             ))}
           </div>
@@ -95,150 +148,104 @@ export default function Vip() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-5xl px-6 py-10 sm:px-8 sm:py-12">
-        <header className="mb-10 max-w-xl">
+        <header className="mb-8 max-w-xl">
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Formules VIP</h1>
           <p className="mt-1 text-sm text-slate-500">
             Réductions permanentes, prestations offertes et accès prioritaire aux services réservés aux abonnés.
           </p>
         </header>
 
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="inline-flex rounded-control bg-slate-200/70 p-1">
+            {(['MONTH', 'YEAR'] as Interval[]).map((valeur) => (
+              <button
+                key={valeur}
+                onClick={() => setInterval(valeur)}
+                className={`rounded-[0.4rem] px-4 py-1.5 text-sm font-medium transition-colors ${
+                  interval === valeur ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {valeur === 'MONTH' ? 'Mensuel' : 'Annuel'}
+              </button>
+            ))}
+          </div>
+
+          
+        </div>
+
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {/* Free */}
-          <div
-            className={`flex flex-col rounded-card border bg-white p-6 shadow-card ${
-              currentPlan === 'FREE' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200'
-            }`}
-          >
-            <div className="flex-1">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Free</h2>
-              <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Gratuit</p>
-              <p className="mt-1 text-sm text-slate-500">Pour découvrir la plateforme</p>
+          {FORMULES.map((formule) => {
+            const estPlanActuel = currentPlan === formule.type;
+            const prix = formule.prix[interval];
+            const bonus = bonusRenouvellement && formule.type === 'EXPLORATOR';
+            const prixPaye = bonus ? Math.round(prix * 0.9 * 100) / 100 : prix;
+            const planKey = formule.cle ? `${formule.cle}_${interval.toLowerCase()}` : '';
 
-              <ul className="mt-6 space-y-3 border-t border-slate-100 pt-6 text-sm">
-                <li className="flex items-start gap-2.5 text-slate-700">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
-                  <span>Publication d'avis</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-slate-400">
-                  <Minus className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" strokeWidth={2.5} />
-                  <span>Réductions sur les prestations</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-slate-400">
-                  <Minus className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" strokeWidth={2.5} />
-                  <span>Prestations offertes</span>
-                </li>
-              </ul>
-            </div>
+            return (
+              <div
+                key={formule.type}
+                className={`flex flex-col rounded-card border bg-white p-6 shadow-card ${
+                  estPlanActuel ? 'border-brand-600 ring-1 ring-brand-600' : 'border-slate-200'
+                }`}
+              >
+                <div className="flex-1">
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{formule.nom}</h2>
 
-            <button
-              disabled={true}
-              className={`${BTN} mt-8 ${
-                currentPlan === 'FREE'
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-50 text-slate-400 ring-1 ring-inset ring-slate-200'
-              }`}
-            >
-              {currentPlan === 'FREE' ? 'Plan actuel' : 'Inclus par défaut'}
-            </button>
-          </div>
+                  {prix === 0 ? (
+                    <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Gratuit</p>
+                  ) : (
+                    <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+                      {bonus && <span className="mr-2 text-lg font-normal text-slate-400 line-through">{formatPrix(prix)} €</span>}
+                      {formatPrix(prixPaye)} €
+                      <span className="text-base font-normal text-slate-400">
+                        {interval === 'MONTH' ? ' /mois' : ' /an'}
+                      </span>
+                    </p>
+                  )}
 
-          {/* Bag Packer */}
-          <div
-            className={`flex flex-col rounded-card border bg-white p-6 shadow-card ${
-              currentPlan === 'BAG_PACKER' ? 'border-brand-600 ring-1 ring-brand-600' : 'border-slate-200'
-            }`}
-          >
-            <div className="flex-1">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-600">Bag Packer</h2>
-              <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-                9,90 €<span className="text-base font-normal text-slate-400"> /mois</span>
-              </p>
-              <p className="mt-1 text-sm text-slate-500">Pour les séjours réguliers</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {bonus ? 'Bonus renouvellement -10 % appliqué' : formule.accroche}
+                  </p>
 
-              <ul className="mt-6 space-y-3 border-t border-slate-100 pt-6 text-sm">
-                <li className="flex items-start gap-2.5 text-slate-700">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
-                  <span>Navigation sans publicité</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-slate-700">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
-                  <span>1 prestation offerte par an</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-slate-400">
-                  <Minus className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" strokeWidth={2.5} />
-                  <span>Réduction permanente</span>
-                </li>
-              </ul>
-            </div>
+                  <ul className="mt-6 space-y-3 border-t border-slate-100 pt-6 text-sm">
+                    {formule.avantages.map((avantage) => (
+                      <li
+                        key={avantage.texte}
+                        className={`flex items-start gap-2.5 ${avantage.ok ? 'text-slate-700' : 'text-slate-400'}`}
+                      >
+                        {avantage.ok ? (
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
+                        ) : (
+                          <Minus className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" strokeWidth={2.5} />
+                        )}
+                        <span>{avantage.texte}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-            <button
-              onClick={() => handleSubscribe('bag_packer')}
-              disabled={currentPlan === 'BAG_PACKER' || loadingPlan === 'bag_packer'}
-              className={`${BTN} mt-8 ${
-                currentPlan === 'BAG_PACKER'
-                  ? 'bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200'
-                  : 'bg-white text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              {currentPlan === 'BAG_PACKER'
-                ? 'Plan actuel'
-                : loadingPlan === 'bag_packer'
-                ? 'Redirection…'
-                : 'Souscrire'}
-            </button>
-          </div>
-
-          {/* Explorator */}
-          <div
-            className={`relative flex flex-col rounded-card border bg-white p-6 shadow-pop ${
-              currentPlan === 'EXPLORATOR' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-900/10 ring-1 ring-slate-900/5'
-            }`}
-          >
-            {currentPlan !== 'EXPLORATOR' && (
-              <span className="absolute -top-3 left-6 rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold tracking-wide text-white">
-                Recommandé
-              </span>
-            )}
-
-            <div className="flex-1">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-900">Explorator</h2>
-              <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-                19,00 €<span className="text-base font-normal text-slate-400"> /mois</span>
-              </p>
-              <p className="mt-1 text-sm text-slate-500">L'offre la plus complète</p>
-
-              <ul className="mt-6 space-y-3 border-t border-slate-100 pt-6 text-sm">
-                <li className="flex items-start gap-2.5 text-slate-700">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
-                  <span>Réduction permanente de 5 %</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-slate-700">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
-                  <span>Accès prioritaire aux prestations VIP</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-slate-700">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
-                  <span>Navigation sans publicité</span>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              onClick={() => handleSubscribe('explorator')}
-              disabled={currentPlan === 'EXPLORATOR' || loadingPlan === 'explorator'}
-              className={`${BTN} mt-8 ${
-                currentPlan === 'EXPLORATOR'
-                  ? 'bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200'
-                  : 'bg-slate-900 text-white shadow-sm hover:bg-slate-800'
-              }`}
-            >
-              {currentPlan === 'EXPLORATOR'
-                ? 'Plan actuel'
-                : loadingPlan === 'explorator'
-                ? 'Redirection…'
-                : 'Souscrire'}
-            </button>
-          </div>
+                <button
+                  onClick={() => formule.cle && handleSubscribe(formule.cle)}
+                  disabled={!formule.cle || estPlanActuel || loadingPlan === planKey}
+                  className={`${BTN} mt-8 ${
+                    estPlanActuel
+                      ? 'bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200'
+                      : !formule.cle
+                      ? 'bg-slate-50 text-slate-400 ring-1 ring-inset ring-slate-200'
+                      : 'bg-slate-900 text-white shadow-sm hover:bg-slate-800'
+                  }`}
+                >
+                  {estPlanActuel
+                    ? 'Plan actuel'
+                    : !formule.cle
+                    ? 'Inclus par défaut'
+                    : loadingPlan === planKey
+                    ? 'Redirection…'
+                    : 'Souscrire'}
+                </button>
+              </div>
+            );
+          })}
         </div>
 
         <p className="mt-8 text-xs text-slate-400">

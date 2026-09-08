@@ -4,4 +4,5 @@ export interface ServiceDTO {
   description: string;
   prix_base: number;
   actif: boolean;
+  vip_only: boolean;
 }

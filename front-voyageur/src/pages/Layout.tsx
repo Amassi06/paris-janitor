@@ -1,9 +1,38 @@
+import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { CalendarDays, LayoutGrid, Sparkles, LogOut } from 'lucide-react';
+import { API_URL, type SubscriptionType } from '../types/booking';
+import type { IProfile } from '../types/booking';
 
 export default function Layout() {
   const location = useLocation();
+  const [profile, setProfile] = useState<IProfile | null>(null);
+  const [offreDisponible, setOffreDisponible] = useState(false);
   const navigate = useNavigate();
+
+  const [subscription, setSubscription] = useState<SubscriptionType | null>(null);
+  const currentPlan = profile?.subscription ?? 'FREE';
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    const fetchSubsription = async()=>{
+      try{
+        const res = await fetch(`${API_URL}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok){
+          setSubscription(null);
+          return;
+        }
+        const data = await res.json();
+        setProfile(data.user);
+        setOffreDisponible(data.offre_disponible);
+        setSubscription(data.user?.subscription??null);
+      }catch{
+        setSubscription(null);
+      }
+    }
+    fetchSubsription();
+    },[location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -31,6 +60,38 @@ export default function Layout() {
             </div>
           </div>
         </div>
+        
+         {currentPlan === 'FREE' && (
+    <div className="mt-0 mb-6 flex flex-col items-start gap-2 px-4 text-xs">
+      <span className="inline-flex w-fit items-center rounded-full bg-blue-500/10 px-2.5 py-1 font-medium text-blue-300 ring-1 ring-inset ring-blue-500/20">
+        Formule Free
+      </span>
+      </div>
+      )}
+      
+        {currentPlan !== 'FREE' && (
+    <div className="mt-0 mb-6 flex flex-col items-start gap-2 px-4 text-xs">
+      <span className="inline-flex w-fit items-center rounded-full bg-blue-500/10 px-2.5 py-1 font-medium text-blue-300 ring-1 ring-inset ring-blue-500/20">
+        Formule {currentPlan === 'BAG_PACKER' ? 'Bag Packer' : 'Explorator'}
+      </span>
+
+    {profile?.subscription_end && (
+      <span className="inline-flex w-fit items-center rounded-full bg-slate-500/10 px-2.5 py-1 font-medium text-slate-300 ring-1 ring-inset ring-slate-500/20">
+        Jusqu'au {new Date(profile.subscription_end).toLocaleDateString('fr-FR')}
+      </span>
+    )}
+
+    <span
+      className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 font-medium ring-1 ring-inset ${
+        offreDisponible
+          ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20'
+          : 'bg-slate-500/10 text-slate-400 ring-slate-500/20'
+      }`}
+    >
+      {offreDisponible ? '1 prestation offerte' : 'Prestation utilisée'}
+    </span>
+  </div>
+)}
 
         <nav className="flex-1 space-y-1 px-3">
           {navItems.map((item) => {
@@ -72,6 +133,19 @@ export default function Layout() {
       </aside>
 
       <main className="min-w-0 flex-1 overflow-y-auto">
+        {subscription === 'FREE' && (
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-amber-50 px-6 py-2.5 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/15">
+            <span>
+              <span className="mr-2 rounded bg-amber-200/70 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                Publicité
+              </span>
+              Passez à une formule VIP pour naviguer sans publicité.
+            </span>
+            <Link to="/vip" className="font-medium underline underline-offset-4">
+              Voir les formules
+            </Link>
+          </div>
+        )}
         <Outlet />
       </main>
     </div>
