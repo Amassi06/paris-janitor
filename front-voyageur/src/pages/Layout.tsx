@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { CalendarDays, LayoutGrid, Sparkles, LogOut } from 'lucide-react';
-import { API_URL, type SubscriptionType } from '../types/booking';
+import { type SubscriptionType } from '../types/booking';
+import { apiFetch } from '../lib/api';
 import type { IProfile } from '../types/booking';
 
 export default function Layout() {
@@ -14,11 +15,9 @@ export default function Layout() {
   const currentPlan = profile?.subscription ?? 'FREE';
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     const fetchSubsription = async()=>{
       try{
-        const res = await fetch(`${API_URL}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await apiFetch('/api/auth/me');
         if (!res.ok){
           setSubscription(null);
           return;

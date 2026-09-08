@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL } from '../types/env';
 import type { ReservationDTO } from '../types/reservation';
 import type { ServiceDTO } from '../types/service';
 import type { UserDTO } from '../types/user';
 import type { InvoiceDTO } from '../types/invoice';
 import { CalendarDays, LayoutGrid, Users, LogOut, Star, Receipt } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 
 
 const STATUT_STYLE: Record<string, string> = {
@@ -52,7 +52,6 @@ export default function Dashboard() {
   
   const [newService, setNewService] = useState({ nom: '', description: '', prix_base: 0, vip_only: false });
   const [editingService, setEditingService] = useState<ServiceDTO | null>(null);
-  const token = localStorage.getItem('token');
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -62,7 +61,7 @@ export default function Dashboard() {
 useEffect(() => {
     const fetchReservations = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/bookings`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await apiFetch('/api/bookings');
         if (res.ok) setReservations(await res.json());
       } catch (error) { console.error('Erreur', error); } 
       finally { setLoadingResa(false); }
@@ -70,7 +69,7 @@ useEffect(() => {
 
     const fetchServices = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/services`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await apiFetch('/api/services');
         if (res.ok) setServices(await res.json());
       } catch (error) { console.error('Erreur', error); } 
       finally { setLoadingServices(false); }
@@ -78,7 +77,7 @@ useEffect(() => {
 
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/auth/users`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await apiFetch('/api/auth/users');
         if (res.ok) setUsers(await res.json());
       } catch (error) { console.error('Erreur', error); }
       finally { setLoadingUsers(false); }
@@ -86,7 +85,7 @@ useEffect(() => {
 
     const fetchInvoices = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/invoices`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await apiFetch('/api/invoices');
         if (res.ok) setInvoices(await res.json());
       } catch (error) { console.error('Erreur', error); }
       finally { setLoadingInvoices(false); }
@@ -97,14 +96,14 @@ useEffect(() => {
     if (activeTab === 'utilisateurs') fetchUsers();
     if (activeTab === 'factures') fetchInvoices();
 
-  }, [activeTab, token]);
+  }, [activeTab]);
 
   const handleCreateService = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_URL}/api/services`, {
+      const res = await apiFetch('/api/services', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newService)
       });
       if (res.ok) {
@@ -120,9 +119,9 @@ useEffect(() => {
     if (!editingService) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/services/${editingService._id}`, {
+      const res = await apiFetch(`/api/services/${editingService._id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nom: editingService.nom,
           description: editingService.description,
@@ -143,10 +142,7 @@ useEffect(() => {
   const handleDeleteService = async (id: string) => {
     if (!window.confirm('Supprimer ce service définitivement ?')) return;
     try {
-      const res = await fetch(`${API_URL}/api/services/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await apiFetch(`/api/services/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setServices(services.filter(s => s._id !== id));
       }
@@ -158,9 +154,9 @@ useEffect(() => {
     if (!window.confirm(`${action} cet utilisateur ?`)) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/users/${id}/ban`, {
+      const res = await apiFetch(`/api/auth/users/${id}/ban`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ banned })
       });
       const data = await res.json();
@@ -175,9 +171,9 @@ useEffect(() => {
 
   const handleUpdateSubscription = async (id: string, subscription: string) => {
     try {
-      const res = await fetch(`${API_URL}/api/auth/users/${id}`, {
+      const res = await apiFetch(`/api/auth/users/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription })
       });
       const data = await res.json();
@@ -192,9 +188,7 @@ useEffect(() => {
 
   const handleDownloadInvoice = async (bookingId: string) => {
     try {
-      const res = await fetch(`${API_URL}/api/invoices/${bookingId}/download`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await apiFetch(`/api/invoices/${bookingId}/download`);
       if (!res.ok) throw new Error('Facture introuvable');
 
       const blob = await res.blob();
@@ -214,9 +208,9 @@ useEffect(() => {
     if (!window.confirm(`Confirmer : ${action} ?`)) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/bookings/${id}/status`, {
+      const res = await apiFetch(`/api/bookings/${id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ statut })
       });
       const data = await res.json();

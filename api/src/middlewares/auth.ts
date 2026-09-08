@@ -36,7 +36,7 @@ export const authenticate = async (
     }
 
     if (currentUser.banned) {
-      res.status(403).json({ message: 'Ce compte a été banni' });
+      res.status(403).json({ message: 'Ce compte a été banni', code: 'ACCOUNT_BANNED' });
       return;
     }
 

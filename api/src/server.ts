@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -22,6 +23,7 @@ dotenv.config();
 // Middlewares
 app.use(cors({ origin: [ENV.CLIENT_URL, ENV.ADMIN_URL], credentials: true }));app.post('/api/webhooks/stripe',express.raw({type:'application/json'}),handleStripeWebhook);
 app.use(express.json());
+app.use(cookieParser());
 
 app.use('/api/auth',authRoutes)
 app.use('/api/services', serviceRoutes);

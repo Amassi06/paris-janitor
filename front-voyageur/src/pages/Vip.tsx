@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL, type IProfile, type SubscriptionType } from '../types/booking';
+import { type IProfile, type SubscriptionType } from '../types/booking';
+import { apiFetch } from '../lib/api';
 import { Check, Minus } from 'lucide-react';
 
 type Interval = 'MONTH' | 'YEAR';
@@ -65,16 +66,8 @@ export default function Vip() {
 
   useEffect(() => {
     const fetchUserPlan = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
       try {
-        const res = await fetch(`${API_URL}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await apiFetch('/api/auth/me');
 
         if (res.ok) {
           const data = await res.json();
@@ -91,19 +84,13 @@ export default function Vip() {
   }, [navigate]);
 
   const handleSubscribe = async (cle: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return navigate('/login');
-
     const plan = `${cle}_${interval.toLowerCase()}`;
     setLoadingPlan(plan);
 
     try {
-      const res = await fetch(`${API_URL}/api/payments/subscription/checkout`, {
+      const res = await apiFetch('/api/payments/subscription/checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan }),
       });
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import  {BookingStatus,type IBooking,API_URL } from '../types/booking';
+import  {BookingStatus,type IBooking } from '../types/booking';
+import { apiFetch } from '../lib/api';
 import { CalendarDays, CircleAlert, FileText, Star } from 'lucide-react';
 
 const STATUT_STYLE: Record<BookingStatus, string> = {
@@ -42,28 +43,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchBookings = async () => {
-      const token = localStorage.getItem('token');
-
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
       try {
-        const res = await fetch(`${API_URL}/api/bookings/me`, {
+        const res = await apiFetch('/api/bookings/me', {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
         });
 
         if (!res.ok) {
-          if (res.status === 401) {
-            localStorage.removeItem('token');
-            navigate('/login');
-            return;
-          }
           throw new Error('Erreur lors de la récupération des réservations');
         }
 
@@ -85,18 +71,9 @@ export default function Dashboard() {
 
   const handlePay = async (bookingId: string) => {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-
-    const res = await fetch(`${API_URL}/api/payments/${bookingId}/checkout`, {
+    const res = await apiFetch(`/api/payments/${bookingId}/checkout`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers: { 'Content-Type': 'application/json' }
     });
 
     const data = await res.json();
@@ -117,13 +94,9 @@ const handleCancel = async (bookingId: string) => {
     if (!window.confirm('Annuler cette réservation ?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/bookings/${bookingId}/status`, {
+      const res = await apiFetch(`/api/bookings/${bookingId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ statut: BookingStatus.CANCELLED })
       });
 
@@ -152,13 +125,9 @@ const handleCancel = async (bookingId: string) => {
     const commentaire = window.prompt("Laissez un commentaire (optionnel) :") || "";
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/bookings/${bookingId}/review`, {
+      const res = await apiFetch(`/api/bookings/${bookingId}/review`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ note, commentaire })
       });
 
@@ -175,14 +144,7 @@ const handleCancel = async (bookingId: string) => {
   };
   const handleViewInvoice = async (bookingId: string) => {
   try {
-    const token = localStorage.getItem('token');
-
-    const response = await fetch(`${API_URL}/api/invoices/${bookingId}/download`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await apiFetch(`/api/invoices/${bookingId}/download`, { method: 'GET' });
 
     if (!response.ok) {
       throw new Error('Erreur lors du chargement de la facture');

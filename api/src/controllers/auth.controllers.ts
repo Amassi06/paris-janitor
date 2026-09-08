@@ -4,6 +4,27 @@ import jwt from 'jsonwebtoken';
 import { User, UserRole, SubscriptionType } from '../models/User.js';
 import { Booking } from '../models/Booking.js';
 import { offreDisponible } from '../services/pricing.service.js';
+import type { Response as ExpressResponse } from 'express';
+import type { IUser } from '../models/User.js';
+
+const REFRESH_COOKIE = 'refresh_token';
+
+const signerJetons = (user: IUser, jwtSecret: string) => ({
+  access: jwt.sign({ userId: user._id, role: user.role, type: 'access' }, jwtSecret, {
+    expiresIn: '15m',
+  }),
+  refresh: jwt.sign({ userId: user._id, type: 'refresh' }, jwtSecret, { expiresIn: '7d' }),
+});
+
+const poserCookieRefresh = (res: ExpressResponse, refreshToken: string) => {
+  res.cookie(REFRESH_COOKIE, refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/api/auth',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+};
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -67,7 +88,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     if (user.banned) {
-      res.status(403).json({ message: 'Ce compte a été banni' });
+      res.status(403).json({ message: 'Ce compte a été banni', code: 'ACCOUNT_BANNED' });
       return;
     }
 
@@ -77,15 +98,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      jwtSecret,
-      { expiresIn: '1d' }
-    );
+    const { access, refresh } = signerJetons(user, jwtSecret);
+    poserCookieRefresh(res, refresh);
 
     res.json({
       message: 'Connexion réussie',
-      token,
+      token: access,
       user: {
         id: user._id,
         email: user.email,
@@ -97,6 +115,46 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     console.error('Erreur login :', error);
     res.status(500).json({ message: 'Erreur interne du serveur' });
   }
+};
+
+
+export const refresh = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const refreshToken = req.cookies?.[REFRESH_COOKIE];
+    const jwtSecret = process.env.JWT_SECRET;
+
+    if (!refreshToken || !jwtSecret) {
+      res.status(401).json({ message: 'Session expirée' });
+      return;
+    }
+
+    const decoded = jwt.verify(refreshToken, jwtSecret) as { userId: string; type: string };
+    if (decoded.type !== 'refresh') {
+      res.status(401).json({ message: 'Jeton invalide' });
+      return;
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      res.status(401).json({ message: 'Utilisateur introuvable' });
+      return;
+    }
+
+    if (user.banned) {
+      res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
+      res.status(403).json({ message: 'Ce compte a été banni', code: 'ACCOUNT_BANNED' });
+      return;
+    }
+
+    res.json({ token: signerJetons(user, jwtSecret).access });
+  } catch (error) {
+    res.status(401).json({ message: 'Session expirée' });
+  }
+};
+
+export const logout = (req: Request, res: Response): void => {
+  res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
+  res.json({ message: 'Déconnexion réussie' });
 };
 
 export const getMe = async (req: Request, res: Response): Promise<void> => {

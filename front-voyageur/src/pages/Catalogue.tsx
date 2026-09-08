@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { type IService, type IProfile, API_URL } from '../types/booking';
+import { type IService, type IProfile } from '../types/booking';
+import { apiFetch } from '../lib/api';
 import { Sparkles } from 'lucide-react';
 
 
@@ -22,19 +23,10 @@ export default function Catalogue() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/api/services`, {
+        const res = await apiFetch('/api/services', {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
         });
-
-        if (res.status === 401) {
-          navigate('/login');
-          return;
-        }
 
         if (res.ok) {
           const data = await res.json();
@@ -47,10 +39,7 @@ export default function Catalogue() {
       }
     };
     const fetchProfile = async () => {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch('/api/auth/me');
       if (res.ok) {
         const data = await res.json();
         setProfile(data.user);
@@ -86,12 +75,6 @@ export default function Catalogue() {
   };
 
   const handleBook = async (serviceId: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-
     const selectedDate = dates[serviceId];
     if (!selectedDate) {
       alert("Veuillez sélectionner une date et une heure pour cette prestation.");
@@ -100,22 +83,14 @@ export default function Catalogue() {
 
     setBookingId(serviceId);
     try {
-      const res = await fetch(`${API_URL}/api/bookings`, {
+      const res = await apiFetch('/api/bookings', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id_service: serviceId,
           date_prestation: new Date(selectedDate).toISOString(),
         })
       });
-
-      if (res.status === 401) {
-        navigate('/login');
-        return;
-      }
 
       if (res.ok) {
         navigate('/dashboard');
