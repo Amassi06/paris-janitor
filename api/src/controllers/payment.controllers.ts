@@ -1,0 +1,236 @@
+import {Request, Response} from 'express';
+import Stripe from 'stripe';
+import { Booking, BookingStatus} from '../models/Booking.js';
+import { User, SubscriptionType, SubscriptionInterval, IUser } from '../models/User.js';
+import { generateInvoicePDF } from '../services/invoice.service.js';
+import { ENV } from '../config/env.js';
+
+const PLANS: Record<
+  string,
+  { name: string; amount: number; interval: 'month' | 'year'; subscriptionType: SubscriptionType }
+> = {
+  bag_packer_month: {
+    name: 'Abonnement Bag Packer (mensuel)',
+    amount: 990,
+    interval: 'month',
+    subscriptionType: SubscriptionType.BAG_PACKER,
+  },
+  bag_packer_year: {
+    name: 'Abonnement Bag Packer (annuel)',
+    amount: 11300,
+    interval: 'year',
+    subscriptionType: SubscriptionType.BAG_PACKER,
+  },
+  explorator_month: {
+    name: 'Abonnement Explorator (mensuel)',
+    amount: 1900,
+    interval: 'month',
+    subscriptionType: SubscriptionType.EXPLORATOR,
+  },
+  explorator_year: {
+    name: 'Abonnement Explorator (annuel)',
+    amount: 22000,
+    interval: 'year',
+    subscriptionType: SubscriptionType.EXPLORATOR,
+  },
+};
+
+const BONUS_RENOUVELLEMENT = 0.1;
+
+const aDroitAuBonus = (user: IUser | null, planKey: string): boolean =>
+  planKey === 'explorator_year' &&
+  user?.subscription === SubscriptionType.EXPLORATOR &&
+  (user?.renewal_count ?? 0) > 0;
+
+const getStripe = (): Stripe => {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY absente du fichier .env');
+  }
+  return new Stripe(key);
+};
+
+export const createCheckoutSession = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { bookingId } = req.params;
+    const booking = await Booking.findById(bookingId).populate('id_service');
+
+    if (!booking || booking.statut !== BookingStatus.PENDING) {
+      res.status(400).json({ message: 'Réservation invalide ou déjà payée' });
+      return;
+    }
+    const stripe = getStripe();
+    const user_ = await Booking.findById(bookingId).populate<{ id_voyageur: IUser }>('id_voyageur');
+    const userEmail = user_?.id_voyageur?.email;
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: 'Prestation Paris Janitor',
+            },
+            unit_amount: Math.round(booking.prix_final * 100),
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      customer_email: userEmail,
+      success_url: `${ENV.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${ENV.CLIENT_URL}/cancel`,
+      metadata: {
+        type: 'booking',
+        bookingId: booking._id.toString(),
+      },
+    });
+
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('Erreur création session Stripe:', error);
+    res.status(500).json({ message: 'Erreur lors de la création de la session Stripe' });
+  }
+};
+
+export const createSubscriptionCheckout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { plan } = req.body;
+    const userId = req.user?._id;
+
+    if (!userId) {
+      res.status(401).json({ message: 'Utilisateur non authentifié.' });
+      return;
+    }
+
+    const selectedPlan = PLANS[plan];
+    if (!selectedPlan) {
+      res.status(400).json({ message: 'Plan inconnu.' });
+      return;
+    }
+
+    const stripe = getStripe();
+    const user_ = await User.findById(userId);
+    const userEmail = user_?.email;
+
+    const bonus = aDroitAuBonus(user_, plan);
+    const montant = bonus
+      ? Math.round(selectedPlan.amount * (1 - BONUS_RENOUVELLEMENT))
+      : selectedPlan.amount;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer_email: userEmail,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: bonus ? `${selectedPlan.name} - renouvellement -10%` : selectedPlan.name,
+            },
+            unit_amount: montant,
+            recurring: {
+              interval: selectedPlan.interval,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        type: 'subscription',
+        userId: userId.toString(),
+        plan,
+      },
+      success_url: `${ENV.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${ENV.CLIENT_URL}/cancel`,
+    });
+
+    res.json({ url: session.url });
+  } catch (error: any) {
+    console.error('Erreur Checkout Abonnement:', error);
+    res.status(500).json({ message: "Erreur lors de la création de l'abonnement" });
+  }
+};
+
+export const handleStripeWebhook = async (req: Request, res: Response): Promise<void> => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!sig || !endpointSecret) {
+    res.status(400).send('Webhook secret ou signature manquante.');
+    return;
+  }
+
+  let event;
+
+  try {
+    const stripe = getStripe();
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err: any) {
+    console.error('Erreur de signature Webhook :', err.message);
+    res.status(400).send(`Webhook Error: ${err.message}`);
+    return;
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+
+    // Cas 1 : paiement d'une réservation
+    if (session.metadata?.type === 'booking') {
+      const bookingId = session.metadata?.bookingId;
+
+      if (bookingId) {
+        try {
+          const booking = await Booking.findByIdAndUpdate(
+            bookingId,
+            { statut: BookingStatus.CONFIRMED },
+            { new: true }
+          );
+          if (!booking) {
+            console.error(`Réservation introuvable pour l'id : ${bookingId}`);
+          } else {
+            const pdfUrl = await generateInvoicePDF(booking);
+            console.log(`Réservation ${bookingId} confirmée suite au paiement.`);
+            console.log(`Facture générée : ${pdfUrl}`);
+          }
+        } catch (error) {
+          console.error('Erreur lors de la mise à jour de la réservation :', error);
+        }
+      }
+    }
+
+    // Cas 2 : paiement d'un abonnement
+    if (session.metadata?.type === 'subscription') {
+      const userId = session.metadata?.userId;
+      const plan = session.metadata?.plan;
+      const selectedPlan = plan ? PLANS[plan] : undefined;
+
+      if (userId && selectedPlan) {
+        try {
+          const fin = new Date();
+          if (selectedPlan.interval === 'year') {
+            fin.setFullYear(fin.getFullYear() + 1);
+          } else {
+            fin.setMonth(fin.getMonth() + 1);
+          }
+
+          await User.findByIdAndUpdate(userId, {
+            subscription: selectedPlan.subscriptionType,
+            subscription_interval:
+              selectedPlan.interval === 'year'
+                ? SubscriptionInterval.YEAR
+                : SubscriptionInterval.MONTH,
+            subscription_end: fin,
+            $inc: { renewal_count: 1 },
+          });
+          console.log(`Abonnement ${plan} activé pour l'utilisateur ${userId}.`);
+        } catch (error) {
+          console.error("Erreur lors de la mise à jour de l'abonnement :", error);
+        }
+      }
+    }
+  }
+
+  res.status(200).json({ received: true });
+};

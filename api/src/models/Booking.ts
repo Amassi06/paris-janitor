@@ -13,6 +13,8 @@ export interface IBooking extends Document {
   date_prestation: Date;
   statut: BookingStatus;
   prix_final: number;
+  note?:number;
+  commentaire?:string,
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +44,18 @@ const bookingSchema = new Schema<IBooking>(
       type: Number,
       required: true,
       min: 0,
+    },
+    note: {
+      type: Number,
+      min: 1,
+      max: 5,
+      required: false,
+    },
+    commentaire: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+      required: false,
     },
   },
   { timestamps: true }

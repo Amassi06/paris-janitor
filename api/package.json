@@ -6,22 +6,34 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && mkdir -p dist/swagger && cp src/swagger/swagger-output.json dist/swagger/",
     "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mongoose": "^9.9.4"
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.9.4",
+    "pdfkit": "^0.20.2",
+    "stripe": "^22.6.1",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.4.1",
+    "@types/pdfkit": "^0.17.6",
+    "@types/swagger-ui-express": "^4.1.8",
+    "swagger-autogen": "^2.23.7",
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"

@@ -3,7 +3,7 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 export interface IInvoice extends Document {
   id_booking: Types.ObjectId;
   montant: number;
-  url_pdf: string;
+  pdf_data: Buffer;
   numero_facture: string;
   createdAt: Date;
   updatedAt: Date;
@@ -22,8 +22,8 @@ const invoiceSchema = new Schema<IInvoice>(
       required: true,
       min: 0,
     },
-    url_pdf: {
-      type: String,
+    pdf_data: {
+      type: Buffer,
       required: true,
     },
     numero_facture: {
