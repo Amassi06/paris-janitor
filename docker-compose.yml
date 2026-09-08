@@ -1,11 +1,159 @@
-version: '3.8'
+
 services:
+  # ============ COMMUN ============
   mongodb:
-    image: mongo:latest
-    container_name: paris_janitor_db
+    image: mongo:8
+    container_name: pj_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ============ DEV ============
+  api-dev:
+    profiles: ["dev"]
+    build:
+      context: ./api
+      target: dev
+    container_name: pj_api_dev
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017/paris-janitor?authSource=admin
+      JWT_SECRET: ${JWT_SECRET}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_PUBLIC_KEY: ${STRIPE_PUBLIC_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      CLIENT_URL: http://localhost:5173
+      ADMIN_URL: http://localhost:5174
+      API_URL: http://localhost:3000
+    volumes:
+      - ./api/src:/app/src
+    ports:
+      - "3000:3000"
+
+  front-voyageur-dev:
+    profiles: ["dev"]
+    build:
+      context: ./front-voyageur
+      target: dev
+    container_name: pj_front_voyageur_dev
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:3000
+    volumes:
+      - ./front-voyageur/src:/app/src
+      - ./front-voyageur/index.html:/app/index.html
+    ports:
+      - "5173:5173"
+
+  front-admin-dev:
+    profiles: ["dev"]
+    build:
+      context: ./front-admin
+      target: dev
+    container_name: pj_front_admin_dev
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:3000
+    volumes:
+      - ./front-admin/src:/app/src
+      - ./front-admin/index.html:/app/index.html
+    ports:
+      - "5174:5173"
+
+  # ============ PROD ============
+  api:
+    profiles: ["prod"]
+    build:
+      context: ./api
+      target: runtime
+    container_name: pj_api
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017/paris-janitor?authSource=admin
+      JWT_SECRET: ${JWT_SECRET}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_PUBLIC_KEY: ${STRIPE_PUBLIC_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      CLIENT_URL: https://${APP_DOMAIN}
+      ADMIN_URL: https://${ADMIN_DOMAIN}
+      API_URL: https://${API_DOMAIN}
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  front-voyageur:
+    profiles: ["prod"]
+    build:
+      context: ./front-voyageur
+      target: runtime
+      args:
+        VITE_API_URL: https://${API_DOMAIN}
+    container_name: pj_front_voyageur
+    restart: unless-stopped
+    expose:
+      - "80"
+
+  front-admin:
+    profiles: ["prod"]
+    build:
+      context: ./front-admin
+      target: runtime
+      args:
+        VITE_API_URL: https://${API_DOMAIN}
+    container_name: pj_front_admin
+    restart: unless-stopped
+    expose:
+      - "80"
+
+  caddy:
+    profiles: ["prod"]
+    image: caddy:2-alpine
+    container_name: pj_caddy
+    restart: unless-stopped
+    depends_on:
+      - api
+      - front-voyageur
+      - front-admin
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
+      APP_DOMAIN: ${APP_DOMAIN}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
 volumes:
   mongo_data:
+  caddy_data:
+  caddy_config:
