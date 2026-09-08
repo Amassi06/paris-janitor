@@ -10,6 +10,7 @@
     "build": "npm run swagger && tsc && mkdir -p dist/swagger && cp src/swagger/swagger-output.json dist/swagger/",
     "start": "node dist/server.js",
     "seed": "tsx src/scripts/seed.ts",
+    "seed:prod": "node dist/scripts/seed.js",
     "test": "vitest run",
     "lint": "eslint ."
   },
