@@ -34,3 +34,24 @@ export const downloadInvoice = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Erreur serveur lors de la récupération du PDF' });
   }
 };
+
+export const getAllInvoices = async (req: Request, res: Response) => {
+  try {
+    const invoices = await Invoice.find()
+      .select('-pdf_data')
+      .populate({
+        path: 'id_booking',
+        select: 'date_prestation statut',
+        populate: [
+          { path: 'id_voyageur', select: 'email' },
+          { path: 'id_service', select: 'nom' },
+        ],
+      })
+      .sort({ createdAt: -1 });
+
+    return res.json(invoices);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des factures:', error);
+    return res.status(500).json({ message: 'Erreur serveur' });
+  }
+};

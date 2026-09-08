@@ -22,6 +22,7 @@ export interface IUser extends mongoose.Document {
   password: string;
   role: UserRole;
   subscription: SubscriptionType;
+  banned: boolean;
   subscription_interval?: SubscriptionInterval;
   subscription_end?: Date;
   renewal_count: number;
@@ -52,6 +53,10 @@ const userSchema = new mongoose.Schema<IUser>(
       type: String,
       enum: Object.values(SubscriptionType),
       default: SubscriptionType.FREE,
+    },
+    banned: {
+      type: Boolean,
+      default: false,
     },
     subscription_interval: {
       type: String,

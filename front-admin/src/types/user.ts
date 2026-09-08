@@ -3,4 +3,6 @@ export interface UserDTO {
   email: string;
   role: 'ADMIN' | 'VOYAGEUR';
   subscription: string;
+  banned: boolean;
+  nb_reservations: number;
 }

@@ -4,7 +4,8 @@ import { API_URL } from '../types/env';
 import type { ReservationDTO } from '../types/reservation';
 import type { ServiceDTO } from '../types/service';
 import type { UserDTO } from '../types/user';
-import { CalendarDays, LayoutGrid, Users, LogOut, Star } from 'lucide-react';
+import type { InvoiceDTO } from '../types/invoice';
+import { CalendarDays, LayoutGrid, Users, LogOut, Star, Receipt } from 'lucide-react';
 
 
 const STATUT_STYLE: Record<string, string> = {
@@ -36,7 +37,9 @@ const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'reservations' | 'services' | 'utilisateurs'>('reservations');
+  const [activeTab, setActiveTab] = useState<'reservations' | 'services' | 'utilisateurs' | 'factures'>('reservations');
+  const [invoices, setInvoices] = useState<InvoiceDTO[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
   const [users, setUsers] = useState<UserDTO[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const navigate = useNavigate();
@@ -81,9 +84,18 @@ useEffect(() => {
       finally { setLoadingUsers(false); }
     };
 
+    const fetchInvoices = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/invoices`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.ok) setInvoices(await res.json());
+      } catch (error) { console.error('Erreur', error); }
+      finally { setLoadingInvoices(false); }
+    };
+
     if (activeTab === 'reservations') fetchReservations();
     if (activeTab === 'services') fetchServices();
     if (activeTab === 'utilisateurs') fetchUsers();
+    if (activeTab === 'factures') fetchInvoices();
 
   }, [activeTab, token]);
 
@@ -141,19 +153,59 @@ useEffect(() => {
     } catch (error) { console.error('Erreur suppression service', error); }
   };
 
-  const handleBanUser = async (id:string) => {
-    if (!window.confirm('Bannir cet utilisateur définitivement ?')) return;
-    try{
-        const res = await fetch(`${API_URL}/api/auth/users/${id}`,{
-            method:'DELETE',
-            headers:{'Authorization':`Bearer ${token}` }
-        });
-        if (res.ok){
-            setUsers(users.filter(u=>u._id!==id));
-        }
+  const handleToggleBan = async (id: string, banned: boolean) => {
+    const action = banned ? 'Bannir' : 'Débannir';
+    if (!window.confirm(`${action} cet utilisateur ?`)) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/auth/users/${id}/ban`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ banned })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erreur');
+
+      setUsers(users.map(u => (u._id === id ? { ...u, banned: data.banned } : u)));
+    } catch (error) {
+      console.error('Erreur bannissement', error);
+      alert(error instanceof Error ? error.message : 'Erreur réseau');
     }
-    catch (error) { console.error('Erreur lors suppression utilisateur',error)};
-}
+  };
+
+  const handleUpdateSubscription = async (id: string, subscription: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/auth/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ subscription })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erreur');
+
+      setUsers(users.map(u => (u._id === id ? { ...u, subscription: data.subscription } : u)));
+    } catch (error) {
+      console.error('Erreur abonnement', error);
+      alert(error instanceof Error ? error.message : 'Erreur réseau');
+    }
+  };
+
+  const handleDownloadInvoice = async (bookingId: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/invoices/${bookingId}/download`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Facture introuvable');
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (error) {
+      console.error(error);
+      alert("Impossible d'ouvrir la facture.");
+    }
+  };
 
   const handleUpdateStatus = async (id: string, statut: 'COMPLETED' | 'CANCELLED') => {
     const action = statut === 'COMPLETED'
@@ -181,6 +233,7 @@ useEffect(() => {
     { id: 'reservations', label: 'Réservations', icon: <CalendarDays className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} /> },
     { id: 'services', label: 'Catalogue', icon: <LayoutGrid className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} /> },
     { id: 'utilisateurs', label: 'Utilisateurs', icon: <Users className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} /> },
+    { id: 'factures', label: 'Factures & règlements', icon: <Receipt className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} /> },
   ] as const;
 
   return (
@@ -566,6 +619,8 @@ useEffect(() => {
                         <th className={TH}>Email</th>
                         <th className={TH}>Rôle</th>
                         <th className={TH}>Abonnement</th>
+                        <th className={`${TH} text-right`}>Réservations</th>
+                        <th className={TH}>Statut</th>
                         <th className={`${TH} text-right`}>Actions</th>
                       </tr>
                     </thead>
@@ -586,11 +641,126 @@ useEffect(() => {
                               {user.role}
                             </span>
                           </td>
-                          <td className={`${TD} text-slate-500`}>{user.subscription}</td>
+                          <td className={TD}>
+                            <select
+                              value={user.subscription}
+                              onChange={(e) => handleUpdateSubscription(user._id, e.target.value)}
+                              className="rounded-control border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:border-brand-500 focus:outline-none"
+                            >
+                              <option value="FREE">Free</option>
+                              <option value="BAG_PACKER">Bag Packer</option>
+                              <option value="EXPLORATOR">Explorator</option>
+                            </select>
+                          </td>
+                          <td className={`${TD} text-right tabular-nums text-slate-600`}>
+                            {user.nb_reservations}
+                          </td>
+                          <td className={TD}>
+                            {user.banned ? (
+                              <span className="inline-block rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
+                                Banni
+                              </span>
+                            ) : (
+                              <span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                Actif
+                              </span>
+                            )}
+                          </td>
                           <td className={`${TD} whitespace-nowrap text-right`}>
-                            <button onClick={() => handleBanUser(user._id)} className={`${BTN_DANGER} px-3 py-1.5 text-xs`}>
-                              Bannir
+                            <button
+                              onClick={() => handleToggleBan(user._id, !user.banned)}
+                              className={`${user.banned ? BTN_OUTLINE : BTN_DANGER} px-3 py-1.5 text-xs`}
+                            >
+                              {user.banned ? 'Débannir' : 'Bannir'}
                             </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'factures' && (
+            <>
+              <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Factures &amp; règlements</h1>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Toutes les factures émises par la plateforme, archivées et téléchargeables.
+                  </p>
+                </div>
+                {!loadingInvoices && invoices.length > 0 && (
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
+                    {invoices.length} facture{invoices.length > 1 ? 's' : ''} &middot;{' '}
+                    {invoices.reduce((total, f) => total + f.montant, 0).toFixed(2)} € encaissés
+                  </span>
+                )}
+              </header>
+
+              {loadingInvoices ? (
+                <div className={`${CARD} divide-y divide-slate-100`}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="animate-pulse px-6 py-5">
+                      <div className="h-3.5 w-56 rounded-full bg-slate-200" />
+                    </div>
+                  ))}
+                </div>
+              ) : invoices.length === 0 ? (
+                <div className="rounded-card border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+                  <h2 className="text-sm font-semibold text-slate-900">Aucune facture</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Les factures sont générées automatiquement au paiement d'une réservation.
+                  </p>
+                </div>
+              ) : (
+                <div className={`${CARD} overflow-x-auto`}>
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-slate-200 bg-slate-50/80">
+                      <tr>
+                        <th className={TH}>N° de facture</th>
+                        <th className={TH}>Client</th>
+                        <th className={TH}>Prestation</th>
+                        <th className={TH}>Émise le</th>
+                        <th className={`${TH} text-right`}>Montant</th>
+                        <th className={`${TH} text-right`}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {invoices.map((facture) => (
+                        <tr key={facture._id} className="transition-colors hover:bg-slate-50/70">
+                          <td className={`${TD} font-medium text-slate-900`}>
+                            <span className="block max-w-[16rem] wrap-anywhere">{facture.numero_facture}</span>
+                          </td>
+                          <td className={`${TD} text-slate-600`}>
+                            <span className="block max-w-[14rem] wrap-anywhere">
+                              {facture.id_booking?.id_voyageur?.email || <span className="text-slate-400">—</span>}
+                            </span>
+                          </td>
+                          <td className={`${TD} text-slate-600`}>
+                            <span className="block max-w-[12rem] wrap-anywhere">
+                              {facture.id_booking?.id_service?.nom || <span className="text-slate-400">—</span>}
+                            </span>
+                          </td>
+                          <td className={`${TD} whitespace-nowrap text-slate-500`}>
+                            {formatDate(facture.createdAt)}
+                          </td>
+                          <td className={`${TD} whitespace-nowrap text-right font-semibold tabular-nums text-slate-900`}>
+                            {facture.montant.toFixed(2)} €
+                          </td>
+                          <td className={`${TD} whitespace-nowrap text-right`}>
+                            {facture.id_booking ? (
+                              <button
+                                onClick={() => handleDownloadInvoice(facture.id_booking!._id)}
+                                className={`${BTN_OUTLINE} px-3 py-1.5 text-xs`}
+                              >
+                                Télécharger
+                              </button>
+                            ) : (
+                              <span className="text-xs text-slate-300">—</span>
+                            )}
                           </td>
                         </tr>
                       ))}

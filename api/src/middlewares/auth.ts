@@ -35,6 +35,11 @@ export const authenticate = async (
       return;
     }
 
+    if (currentUser.banned) {
+      res.status(403).json({ message: 'Ce compte a été banni' });
+      return;
+    }
+
     req.user = currentUser;
     next();
   } catch (error) {
