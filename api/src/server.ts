@@ -35,13 +35,10 @@ app.use('/api/invoices', invoiceRoutes);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const swaggerPath = path.join(__dirname, "swagger", "swagger-output.json");
-const swaggerDocument = JSON.parse(fs.readFileSync(swaggerPath, "utf-8"));
-const swaggerFile = JSON.parse(
-  fs.readFileSync(path.resolve('./src/swagger/swagger-output.json'), 'utf-8')
-);
+const swaggerPath = path.join(__dirname, 'swagger', 'swagger-output.json');
+const swaggerDocument = JSON.parse(fs.readFileSync(swaggerPath, 'utf-8'));
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Route test
 app.get('/', (req: Request, res: Response) => {
