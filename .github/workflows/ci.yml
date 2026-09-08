@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - working-directory: api
+        run: npm ci
+
+      - working-directory: api
+        run: npm run lint
+
+      - working-directory: api
+        run: npm run build
+
+      - working-directory: api
+        run: npm test
+        env:
+          MONGO_URI: mongodb://127.0.0.1:27017/paris-janitor-test
+          JWT_SECRET: ci-test-secret
+          CLIENT_URL: http://localhost:5173
+          ADMIN_URL: http://localhost:5174
+          API_URL: http://localhost:3000
+
+  build-fronts:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [front-admin, front-voyageur]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+
+      - working-directory: ${{ matrix.app }}
+        run: npm ci
+
+      - working-directory: ${{ matrix.app }}
+        run: npm run lint
+
+      - working-directory: ${{ matrix.app }}
+        run: npm run build
