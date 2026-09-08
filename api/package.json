@@ -5,9 +5,11 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc && mkdir -p dist/swagger && cp src/swagger/swagger-output.json dist/swagger/",
-    "start": "node dist/server.js"
+    "dev": "npm run swagger && tsx watch src/server.ts",
+    "swagger": "tsx src/swagger/swagger.ts",
+    "build": "npm run swagger && tsc && mkdir -p dist/swagger && cp src/swagger/swagger-output.json dist/swagger/",
+    "start": "node dist/server.js",
+    "seed": "tsx src/scripts/seed.ts"
   },
   "keywords": [],
   "author": "",
