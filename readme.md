@@ -19,7 +19,7 @@ Clés Stripe en mode test : https://dashboard.stripe.com/test/apikeys
 Nécessite le [Stripe CLI](https://docs.stripe.com/stripe-cli).
 ```bash
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
-# copier le whsec_... -> STRIPE_WEBHOOK_SECRET dans .env, puis :
+# copier le whsec_... -> STRIPE_WEBHOOK_SECRET dans .env
 ```
 
 ```bash
