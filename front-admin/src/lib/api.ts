@@ -37,3 +37,16 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
 
   return response;
 }
+
+export async function logout(): Promise<void> {
+  try {
+    await fetch(`${API_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+  } catch {
+    // le cookie sera de toute façon inutilisable sans token local
+  } finally {
+    localStorage.removeItem('token');
+  }
+}

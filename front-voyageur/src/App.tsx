@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Success from './pages/Success';
@@ -6,6 +6,15 @@ import Cancel from './pages/Cancel';
 import Catalogue from './pages/Catalogue';
 import Vip from './pages/Vip';
 import Layout from './pages/Layout';
+
+function ProtectedRoute() {
+  const location = useLocation();
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+  return <Outlet />;
+}
 
 export default function App() {
   return (
@@ -16,12 +25,14 @@ export default function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Login />} />
-        <Route element={<Layout/>}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/catalogue" element={<Catalogue />} />
-          <Route path="/vip" element={<Vip/>} />
-          <Route path="/success" element={<Success />} />
-          <Route path="/cancel" element={<Cancel />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout/>}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/catalogue" element={<Catalogue />} />
+            <Route path="/vip" element={<Vip/>} />
+            <Route path="/success" element={<Success />} />
+            <Route path="/cancel" element={<Cancel />} />
+          </Route>
         </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

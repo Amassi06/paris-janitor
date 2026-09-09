@@ -5,7 +5,7 @@ import type { ServiceDTO } from '../types/service';
 import type { UserDTO } from '../types/user';
 import type { InvoiceDTO } from '../types/invoice';
 import { CalendarDays, LayoutGrid, Users, LogOut, Star, Receipt, Menu, X } from 'lucide-react';
-import { apiFetch } from '../lib/api';
+import { apiFetch, logout } from '../lib/api';
 
 
 const STATUT_STYLE: Record<string, string> = {
@@ -54,9 +54,9 @@ export default function Dashboard() {
   const [newService, setNewService] = useState({ nom: '', description: '', prix_base: 0, vip_only: false });
   const [editingService, setEditingService] = useState<ServiceDTO | null>(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
   };
 
 useEffect(() => {

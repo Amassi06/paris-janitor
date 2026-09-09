@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { CalendarDays, LayoutGrid, Sparkles, LogOut, Menu, X } from 'lucide-react';
 import { type SubscriptionType } from '../types/booking';
-import { apiFetch } from '../lib/api';
+import { apiFetch, logout } from '../lib/api';
 import type { IProfile } from '../types/booking';
 
 export default function Layout() {
@@ -34,9 +34,9 @@ export default function Layout() {
     fetchSubsription();
     },[location.pathname]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
   };
 
   const navItems = [
