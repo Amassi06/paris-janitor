@@ -100,7 +100,7 @@ export default function Login() {
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
-                VIVE ALGERIE
+                Email
               </label>
               <input
                 id="email"
