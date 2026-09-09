@@ -25,8 +25,9 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```bash
 docker compose up -d --build          # démarre tout (1re fois : ~3 min)
 docker compose exec api-dev npm run seed   # remplit la base
+docker stop $(docker ps -q)
+docker start $(docker ps -a -q)
 ```
-
 | | |
 |---|---|
 | Voyageurs | http://localhost:5173 |
