@@ -19,6 +19,6 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/paris-janitor
+            cd /home/paris-janitor
             git pull origin main
             docker compose up -d --build
